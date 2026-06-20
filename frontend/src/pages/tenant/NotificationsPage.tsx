@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { notificationsApi } from '@/api'
-import { formatRelative } from '@/lib/utils'
+import { formatRelative } from '@/lib/intl'
 
 export default function NotificationsPage() {
   const [page, setPage] = useState(1)

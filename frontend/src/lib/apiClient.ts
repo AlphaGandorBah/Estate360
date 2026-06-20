@@ -1,6 +1,6 @@
 import axios from 'axios'
 import { v4 as uuid } from 'uuid'
-import { useAuthStore } from '@/store/auth'
+import { useAuthStore, refreshAccessToken } from '@/lib/auth'
 import { pushToast } from '@/lib/toast'
 import { toAppError } from '@/lib/utils'
 
@@ -11,12 +11,12 @@ const IDEMPOTENT_URLS = [
   '/decision', '/resolve', '/reports/',
 ]
 
-const api = axios.create({
+const apiClient = axios.create({
   baseURL: '/api/v1',
   withCredentials: true,
 })
 
-api.interceptors.request.use((config) => {
+apiClient.interceptors.request.use((config) => {
   const access = useAuthStore.getState().access
   if (access) config.headers.Authorization = `Bearer ${access}`
 
@@ -34,30 +34,9 @@ api.interceptors.request.use((config) => {
   return config
 })
 
-let refreshing: Promise<string> | null = null
-
-/**
- * Single-flight token refresh: concurrent callers (failed REST requests, a
- * dropped WebSocket) share one in-flight refresh instead of each firing their
- * own. Returns the new access token, or throws if the refresh itself fails
- * (caller is responsible for clearing the session in that case).
- */
-export function refreshAccessToken(): Promise<string> {
-  if (!refreshing) {
-    refreshing = axios
-      .post('/api/v1/auth/refresh', {}, {
-        withCredentials: true,
-        headers: { 'X-Requested-With': 'estate360-web' },
-      })
-      .then((r) => r.data.access as string)
-      .finally(() => { refreshing = null })
-  }
-  return refreshing
-}
-
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 
-api.interceptors.response.use(
+apiClient.interceptors.response.use(
   (res) => res,
   async (err) => {
     const original = err.config
@@ -77,7 +56,7 @@ api.interceptors.response.use(
         const access = await refreshAccessToken()
         useAuthStore.getState().setAccess(access)
         original.headers.Authorization = `Bearer ${access}`
-        return api(original)
+        return apiClient(original)
       } catch {
         useAuthStore.getState().clearAuth()
         window.location.href = '/login'
@@ -92,7 +71,7 @@ api.interceptors.response.use(
       original._retryCount = (original._retryCount ?? 0) + 1
       if (isSafeRead && original._retryCount <= 3) {
         await sleep(delayMs)
-        return api(original)
+        return apiClient(original)
       }
       pushToast(`Too many requests — please wait ${Math.ceil(delayMs / 1000)}s and try again.`, 'info')
       return Promise.reject(err)
@@ -102,7 +81,7 @@ api.interceptors.response.use(
       original._retried409 = true
       pushToast('Still processing your last request, retrying…', 'info')
       await sleep(1000)
-      return api(original)
+      return apiClient(original)
     }
 
     if (status === 403) {
@@ -133,4 +112,4 @@ api.interceptors.response.use(
   },
 )
 
-export default api
+export default apiClient

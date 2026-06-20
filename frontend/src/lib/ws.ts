@@ -1,6 +1,5 @@
 import { useEffect, useRef, useCallback } from 'react'
-import { useAuthStore } from '@/store/auth'
-import { refreshAccessToken } from '@/api/axios'
+import { useAuthStore, refreshAccessToken } from '@/lib/auth'
 
 interface WsOptions {
   onMessage: (data: Record<string, unknown>) => void
@@ -10,6 +9,12 @@ interface WsOptions {
 
 const RECONNECT_DELAYS_MS = [1000, 2000, 4000, 8000, 16000, 30000]
 
+/**
+ * Reconnecting WebSocket wrapper with subprotocol auth (brief §7.6): the
+ * access token is sent via Sec-WebSocket-Protocol, a 4401 close triggers a
+ * single-flight refresh + one reconnect attempt, and any other close
+ * schedules an exponential-backoff-with-jitter reconnect.
+ */
 export function useWebSocket(path: string, options: WsOptions, enabled = true) {
   const ws = useRef<WebSocket | null>(null)
   const reconnectAttemptRef = useRef(0)

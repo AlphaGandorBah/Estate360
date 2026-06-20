@@ -2,8 +2,9 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useQuery, useMutation } from '@tanstack/react-query'
 import { usersApi } from '@/api'
-import { useAuthStore } from '@/store/auth'
-import { getErrorMessage, formatDate } from '@/lib/utils'
+import { useAuthStore } from '@/lib/auth'
+import { getErrorMessage } from '@/lib/utils'
+import { formatDate } from '@/lib/intl'
 
 export default function AccountPage() {
   const navigate = useNavigate()

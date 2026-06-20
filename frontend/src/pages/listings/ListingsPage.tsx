@@ -3,7 +3,7 @@ import { useSearchParams } from 'react-router-dom'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { listingsApi, savedApi } from '@/api'
 import ListingCard from '@/components/listings/ListingCard'
-import { useAuthStore } from '@/store/auth'
+import { useAuthStore } from '@/lib/auth'
 import { AREA_LABELS, PROPERTY_LABELS } from '@/lib/utils'
 import type { ListingFilters, LocationArea, PropertyType } from '@/types'
 

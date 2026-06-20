@@ -2,9 +2,9 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { messagingApi } from '@/api'
-import { useAuthStore } from '@/store/auth'
-import { formatRelative } from '@/lib/utils'
-import { useWebSocket } from '@/hooks/useWebSocket'
+import { useAuthStore } from '@/lib/auth'
+import { formatRelative } from '@/lib/intl'
+import { useWebSocket } from '@/lib/ws'
 import type { Message } from '@/types'
 
 export default function ConversationDetailPage() {

@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { listingsApi, recommendationsApi, savedApi } from '@/api'
 import ListingCard from '@/components/listings/ListingCard'
-import { useAuthStore } from '@/store/auth'
+import { useAuthStore } from '@/lib/auth'
 import { AREA_LABELS } from '@/lib/utils'
 import type { LocationArea } from '@/types'
 

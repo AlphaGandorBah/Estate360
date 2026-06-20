@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { verificationApi } from '@/api'
-import { formatDate, getErrorMessage } from '@/lib/utils'
+import { getErrorMessage } from '@/lib/utils'
+import { formatDate } from '@/lib/intl'
 import type { DocumentType } from '@/types'
 
 const DOC_TYPES: { value: DocumentType; label: string }[] = [

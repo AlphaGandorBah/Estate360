@@ -3,9 +3,8 @@ import { Routes, Route, Navigate } from 'react-router-dom'
 import Layout from '@/components/layout/Layout'
 import ProtectedRoute from '@/components/layout/ProtectedRoute'
 import ToastHost from '@/components/layout/ToastHost'
-import { refreshAccessToken } from '@/api/axios'
 import { usersApi } from '@/api'
-import { useAuthStore } from '@/store/auth'
+import { useAuthStore, refreshAccessToken } from '@/lib/auth'
 
 // Every route below is its own lazy chunk so the initial bundle only pays
 // for the app shell — required for the low-end-Android/3G target (bundle

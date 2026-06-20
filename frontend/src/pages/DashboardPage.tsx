@@ -1,4 +1,4 @@
-import { useAuthStore } from '@/store/auth'
+import { useAuthStore } from '@/lib/auth'
 import TenantDashboard from '@/pages/tenant/TenantDashboard'
 import LandlordDashboard from '@/pages/landlord/LandlordDashboard'
 import AdminDashboard from '@/pages/admin/AdminDashboard'

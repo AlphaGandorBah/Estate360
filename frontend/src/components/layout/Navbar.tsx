@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { useAuthStore } from '@/store/auth'
+import { useAuthStore } from '@/lib/auth'
 import { authApi } from '@/api'
 import { useIdempotencyKey } from '@/lib/idempotency'
 import NotificationBell from '@/components/notifications/NotificationBell'

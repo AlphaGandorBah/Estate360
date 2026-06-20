@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { savedApi, messagingApi, notificationsApi, recommendationsApi } from '@/api'
-import { useAuthStore } from '@/store/auth'
+import { useAuthStore } from '@/lib/auth'
 import ListingCard from '@/components/listings/ListingCard'
 import type { Conversation } from '@/types'
 

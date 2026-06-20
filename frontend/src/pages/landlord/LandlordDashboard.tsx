@@ -1,8 +1,8 @@
 import { Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { listingsApi, messagingApi, verificationApi } from '@/api'
-import { useAuthStore } from '@/store/auth'
-import { formatPrice } from '@/lib/utils'
+import { useAuthStore } from '@/lib/auth'
+import { formatPrice } from '@/lib/intl'
 
 export default function LandlordDashboard() {
   const user = useAuthStore((s) => s.user)

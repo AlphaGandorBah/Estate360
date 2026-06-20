@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { adminApi } from '@/api'
-import { formatDate } from '@/lib/utils'
+import { formatDate } from '@/lib/intl'
 
 export default function AdminVerificationsPage() {
   const [page, setPage] = useState(1)

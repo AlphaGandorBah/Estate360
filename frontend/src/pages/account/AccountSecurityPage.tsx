@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom'
 import { authApi } from '@/api'
-import { useAuthStore } from '@/store/auth'
+import { useAuthStore } from '@/lib/auth'
 import { useIdempotencyKey } from '@/lib/idempotency'
 
 export default function AccountSecurityPage() {

@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { panoramasApi } from '@/api'
 import { getErrorMessage } from '@/lib/utils'
 import { isSaveDataEnabled } from '@/lib/pwa'
-import { useWebSocket } from '@/hooks/useWebSocket'
+import { useWebSocket } from '@/lib/ws'
 import PanoramaCapture from '@/components/listings/PanoramaCapture'
 import type { Panorama, PanoramaStatus } from '@/types'
 

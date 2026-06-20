@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { listingsApi } from '@/api'
-import { formatPrice } from '@/lib/utils'
+import { formatPrice } from '@/lib/intl'
 
 export default function MyListingsPage() {
   const [page, setPage] = useState(1)

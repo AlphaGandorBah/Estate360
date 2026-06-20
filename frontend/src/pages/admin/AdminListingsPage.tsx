@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { adminApi } from '@/api'
-import { formatPrice } from '@/lib/utils'
+import { formatPrice } from '@/lib/intl'
 import type { ListingStatus } from '@/types'
 
 type FilterStatus = 'pending' | 'approved' | 'rejected' | 'archived'

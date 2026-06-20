@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { adminApi } from '@/api'
-import { formatDate } from '@/lib/utils'
+import { formatDate } from '@/lib/intl'
 import type { Role } from '@/types'
 
 type FilterRole = 'all' | Role

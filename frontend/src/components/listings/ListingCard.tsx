@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
-import { formatPrice, AREA_LABELS, PROPERTY_LABELS } from '@/lib/utils'
+import { AREA_LABELS, PROPERTY_LABELS } from '@/lib/utils'
+import { formatPrice } from '@/lib/intl'
 import type { Listing } from '@/types'
 
 interface Props { listing: Listing; onSave?: (id: number) => void; saved?: boolean }

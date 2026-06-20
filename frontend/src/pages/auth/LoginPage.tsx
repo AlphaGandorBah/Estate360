@@ -2,7 +2,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { authApi } from '@/api'
-import { useAuthStore } from '@/store/auth'
+import { useAuthStore } from '@/lib/auth'
 import { loginSchema, applyServerErrors, type LoginForm } from '@/lib/validation'
 
 export default function LoginPage() {

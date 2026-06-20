@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { adminApi } from '@/api'
-import { formatRelative } from '@/lib/utils'
+import { formatRelative } from '@/lib/intl'
 
 type Resolution = 'dismissed' | 'warning_issued' | 'listing_removed'
 

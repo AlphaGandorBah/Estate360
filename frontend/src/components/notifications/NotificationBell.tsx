@@ -2,9 +2,9 @@ import { useState, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { notificationsApi } from '@/api'
-import { useWebSocket } from '@/hooks/useWebSocket'
-import { useAuthStore } from '@/store/auth'
-import { formatRelative } from '@/lib/utils'
+import { useWebSocket } from '@/lib/ws'
+import { useAuthStore } from '@/lib/auth'
+import { formatRelative } from '@/lib/intl'
 import type { Notification } from '@/types'
 
 export default function NotificationBell() {

@@ -1,7 +1,7 @@
 import { useParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { usersApi } from '@/api'
-import api from '@/api/axios'
+import api from '@/lib/apiClient'
 import ListingCard from '@/components/listings/ListingCard'
 import type { Listing, PaginatedResponse } from '@/types'
 

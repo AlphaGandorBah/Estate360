@@ -2,8 +2,8 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { messagingApi } from '@/api'
-import { useAuthStore } from '@/store/auth'
-import { formatRelative } from '@/lib/utils'
+import { useAuthStore } from '@/lib/auth'
+import { formatRelative } from '@/lib/intl'
 import type { Conversation } from '@/types'
 
 export default function ConversationsPage() {
