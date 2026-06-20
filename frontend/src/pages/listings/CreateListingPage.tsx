@@ -1,67 +1,61 @@
-import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
 import { listingsApi } from '@/api'
-import { AREA_LABELS, PROPERTY_LABELS, getErrorMessage } from '@/lib/utils'
-import type { ListingWritePayload, LocationArea, PropertyType } from '@/types'
+import { AREA_LABELS, PROPERTY_LABELS } from '@/lib/utils'
+import { listingSchema, applyServerErrors, type ListingForm } from '@/lib/validation'
+import LocationPicker from '@/components/listings/LocationPicker'
+import type { LocationArea, PropertyType } from '@/types'
 
 const AREAS = Object.entries(AREA_LABELS) as [LocationArea, string][]
 const TYPES = Object.entries(PROPERTY_LABELS) as [PropertyType, string][]
 
-const INITIAL: ListingWritePayload = {
-  title: '', description: '',
-  property_type: 'apartment', location_area: 'aberdeen',
-  bedrooms: 1, bathrooms: 1,
-  price_annual: 0, currency: 'SLE',
-}
-
 export default function CreateListingPage() {
-  const [form, setForm] = useState<ListingWritePayload>(INITIAL)
-  const [error, setError] = useState('')
-  const [loading, setLoading] = useState(false)
   const navigate = useNavigate()
+  const {
+    register, handleSubmit, setError, watch, setValue,
+    formState: { errors, isSubmitting },
+  } = useForm<ListingForm>({
+    resolver: zodResolver(listingSchema),
+    defaultValues: { property_type: 'apartment', location_area: 'aberdeen', bedrooms: 1, bathrooms: 1, currency: 'SLE', lat: null, lng: null },
+  })
+  const lat = watch('lat')
+  const lng = watch('lng')
 
-  const set = <K extends keyof ListingWritePayload>(k: K, v: ListingWritePayload[K]) =>
-    setForm((f) => ({ ...f, [k]: v }))
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setError('')
-    setLoading(true)
+  const onSubmit = async (form: ListingForm) => {
     try {
-      const r = await listingsApi.create(form)
+      const r = await listingsApi.create({ ...form, lat: form.lat ?? undefined, lng: form.lng ?? undefined })
       navigate(`/listings/${r.data.id}/edit`)
-    } catch (err: unknown) {
-      setError(getErrorMessage(err, 'Failed to create listing'))
-    } finally { setLoading(false) }
+    } catch (err) {
+      applyServerErrors(err, setError, 'Failed to create listing')
+    }
   }
 
   return (
     <div className="mx-auto max-w-2xl">
       <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Create listing</h1>
 
-      {error && <div className="mt-4 rounded-lg bg-red-50 p-3 text-sm text-red-600 dark:bg-red-900/30 dark:text-red-400">{error}</div>}
+      {errors.root?.message && (
+        <div className="mt-4 rounded-lg bg-red-50 p-3 text-sm text-red-600 dark:bg-red-900/30 dark:text-red-400">{errors.root.message}</div>
+      )}
 
-      <form onSubmit={handleSubmit} className="mt-6 space-y-5">
+      <form onSubmit={handleSubmit(onSubmit)} className="mt-6 space-y-5">
         <div>
           <label className="label">Title</label>
-          <input required value={form.title} onChange={(e) => set('title', e.target.value)}
-            className="input" placeholder="2-bedroom apartment in Wilberforce" />
+          <input {...register('title')} className="input" placeholder="2-bedroom apartment in Wilberforce" />
+          {errors.title && <p className="mt-1 text-xs text-red-600 dark:text-red-400">{errors.title.message}</p>}
         </div>
 
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="label">Property type</label>
-            <select value={form.property_type}
-              onChange={(e) => set('property_type', e.target.value as PropertyType)}
-              className="input">
+            <select {...register('property_type')} className="input">
               {TYPES.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
             </select>
           </div>
           <div>
             <label className="label">Area</label>
-            <select value={form.location_area}
-              onChange={(e) => set('location_area', e.target.value as LocationArea)}
-              className="input">
+            <select {...register('location_area')} className="input">
               {AREAS.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
             </select>
           </div>
@@ -69,45 +63,47 @@ export default function CreateListingPage() {
 
         <div>
           <label className="label">Description</label>
-          <textarea required value={form.description} rows={5}
-            onChange={(e) => set('description', e.target.value)}
-            className="input resize-none" />
+          <textarea {...register('description')} rows={5} className="input resize-none" />
+          {errors.description && <p className="mt-1 text-xs text-red-600 dark:text-red-400">{errors.description.message}</p>}
         </div>
 
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="label">Bedrooms</label>
-            <input type="number" min={0} value={form.bedrooms ?? 0}
-              onChange={(e) => set('bedrooms', +e.target.value)} className="input" />
+            <input type="number" min={0} {...register('bedrooms', { valueAsNumber: true })} className="input" />
           </div>
           <div>
             <label className="label">Bathrooms</label>
-            <input type="number" min={0} value={form.bathrooms ?? 0}
-              onChange={(e) => set('bathrooms', +e.target.value)} className="input" />
+            <input type="number" min={0} {...register('bathrooms', { valueAsNumber: true })} className="input" />
           </div>
         </div>
 
         <div>
           <label className="label">Annual rent</label>
-          <input type="number" min={1} required placeholder="e.g. 12000000"
-            value={form.price_annual || ''}
-            onChange={(e) => set('price_annual', e.target.value === '' ? 0 : +e.target.value)}
-            className="input" />
+          <input type="number" min={1} placeholder="e.g. 12000000" {...register('price_annual', { valueAsNumber: true })} className="input" />
+          {errors.price_annual && <p className="mt-1 text-xs text-red-600 dark:text-red-400">{errors.price_annual.message}</p>}
         </div>
 
         <div>
           <label className="label">Currency</label>
-          <select value={form.currency ?? 'SLE'}
-            onChange={(e) => set('currency', e.target.value as 'SLE' | 'USD')}
-            className="input w-40">
+          <select {...register('currency')} className="input w-40">
             <option value="SLE">SLE</option>
             <option value="USD">USD</option>
           </select>
         </div>
 
-        <button type="submit" disabled={loading}
+        <div>
+          <label className="label">Exact location (optional)</label>
+          <LocationPicker
+            lat={lat ?? null}
+            lng={lng ?? null}
+            onChange={(newLat, newLng) => { setValue('lat', newLat); setValue('lng', newLng) }}
+          />
+        </div>
+
+        <button type="submit" disabled={isSubmitting}
           className="w-full rounded-lg bg-emerald-600 py-3 font-semibold text-white hover:bg-emerald-700 disabled:opacity-50">
-          {loading ? 'Creating…' : 'Create listing'}
+          {isSubmitting ? 'Creating…' : 'Create listing'}
         </button>
       </form>
     </div>

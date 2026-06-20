@@ -12,7 +12,11 @@ import yaml
 logger = structlog.get_logger(__name__)
 
 _KNOWLEDGE_DIR = Path(__file__).parent / "knowledge"
-_THRESHOLD = 0.45
+# TF-IDF cosine similarity between a short user message and a short example
+# phrase rarely clears 0.45 even for a clean paraphrase once stopwords are
+# stripped — the old threshold sent most real questions to the fallback.
+# 0.3 was tuned by hand against the example sets in knowledge/*.yml.
+_THRESHOLD = 0.3
 
 _retriever_instance = None
 _retriever_lock = threading.Lock()

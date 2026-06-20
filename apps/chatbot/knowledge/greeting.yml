@@ -1,0 +1,21 @@
+intent: greeting
+examples:
+  - "hi"
+  - "hello"
+  - "hey"
+  - "hey there"
+  - "good morning"
+  - "good afternoon"
+  - "good evening"
+  - "what can you do"
+  - "who are you"
+  - "what is this"
+  - "what is estate360"
+  - "help me"
+  - "can you help me"
+responses:
+  - "Hi! I'm the Estate360 assistant. I can help with finding listings, saving favourites, messaging landlords, landlord verification, reporting fraud, and how pricing works. What do you need?"
+followups:
+  - "Show me listings in Aberdeen"
+  - "How does verification work?"
+  - "How do I message a landlord?"

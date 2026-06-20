@@ -1,11 +1,8 @@
 intent: fallback
 examples:
   - "I don't know"
-  - "help"
-  - "what can you do"
-  - "hello"
-  - "hi"
-  - "who are you"
+  - "asdkjasd"
+  - "blah blah"
 responses:
   - "I'm not sure — try the search bar or contact a landlord directly. You can also ask: 'how does verification work?', 'how do I report a listing?', or 'show me listings in Aberdeen'."
 followups:

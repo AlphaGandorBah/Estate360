@@ -63,7 +63,15 @@ api.interceptors.response.use(
     const original = err.config
     const status = err.response?.status
 
-    if (status === 401 && !original._retry) {
+    // A 401 only means "your session expired, try a silent refresh" for a
+    // request that was actually sent WITH a bearer token. A request with no
+    // Authorization header (login, register, verify-email, password reset)
+    // returning 401 means "those credentials/code were wrong" — routing
+    // that through the refresh-then-redirect-to-login dance would force a
+    // full-page redirect back to /login before the caller's own catch block
+    // (and the "Invalid email or password" message it shows) ever runs.
+    const hadBearerToken = Boolean(original.headers?.Authorization)
+    if (status === 401 && hadBearerToken && !original._retry) {
       original._retry = true
       try {
         const access = await refreshAccessToken()
@@ -107,6 +115,17 @@ api.interceptors.response.use(
     if (status === 503) {
       const appError = toAppError(err, 'Service temporarily unavailable. Please try again.')
       pushToast(appError.detail, 'error', appError.requestId)
+      return Promise.reject(err)
+    }
+
+    if (status === undefined) {
+      // No response at all: dead backend, dropped connection, CORS rejection,
+      // or timeout. Without this branch these fail completely silently and
+      // every action on the page looks like a dead button.
+      const message = err.code === 'ECONNABORTED'
+        ? 'Request timed out. Please try again.'
+        : "Can't reach the server — check your connection and try again."
+      pushToast(message, 'error')
       return Promise.reject(err)
     }
 

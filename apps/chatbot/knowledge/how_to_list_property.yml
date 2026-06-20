@@ -1,0 +1,19 @@
+intent: how_to_list_property
+examples:
+  - "how do I list my property"
+  - "how to add a listing"
+  - "how do I become a landlord here"
+  - "how to post my apartment for rent"
+  - "I want to list my house"
+  - "how do I create a listing"
+  - "how to add photos to my listing"
+  - "how do I add a 360 tour"
+  - "how to upload a panorama"
+  - "why can't I submit my listing"
+  - "my listing won't submit"
+  - "how do I publish my listing"
+responses:
+  - "From your dashboard, click '+ Add Listing' to create a draft, fill in the details, and add at least one 360° photo (capture with your camera or upload an existing equirectangular photo). You'll need to be a verified landlord before you can submit it for admin approval — the Submit button explains what's missing if it's disabled."
+followups:
+  - "How does verification work?"
+  - "How do I add a 360 photo?"

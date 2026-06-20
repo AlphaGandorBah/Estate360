@@ -1,30 +1,26 @@
-import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
 import { authApi } from '@/api'
-import { getErrorMessage } from '@/lib/utils'
 import { useIdempotencyKey } from '@/lib/idempotency'
+import { registerSchema, applyServerErrors, type RegisterForm } from '@/lib/validation'
 
 export default function RegisterPage() {
   const navigate = useNavigate()
   const { key, reset } = useIdempotencyKey()
-  const [form, setForm] = useState({ email: '', full_name: '', phone: '', role: 'tenant', password: '' })
-  const [error, setError] = useState('')
-  const [loading, setLoading] = useState(false)
+  const {
+    register, handleSubmit, setError, watch, setValue,
+    formState: { errors, isSubmitting },
+  } = useForm<RegisterForm>({ resolver: zodResolver(registerSchema), defaultValues: { role: 'tenant' } })
+  const role = watch('role')
 
-  const set = (k: string, v: string) => setForm((f) => ({ ...f, [k]: v }))
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setError('')
-    setLoading(true)
+  const onSubmit = async (form: RegisterForm) => {
     try {
       await authApi.register(form, key)
       reset()
       navigate(`/verify-email?email=${encodeURIComponent(form.email)}`)
-    } catch (err: unknown) {
-      setError(getErrorMessage(err, 'Registration failed'))
-    } finally {
-      setLoading(false)
+    } catch (err) {
+      applyServerErrors(err, setError, 'Registration failed')
     }
   }
 
@@ -34,17 +30,19 @@ export default function RegisterPage() {
         <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Create account</h1>
         <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Join Estate360 today</p>
 
-        {error && <div className="mt-4 rounded-lg bg-red-50 p-3 text-sm text-red-600 dark:bg-red-900/30 dark:text-red-400">{error}</div>}
+        {errors.root?.message && (
+          <div className="mt-4 rounded-lg bg-red-50 p-3 text-sm text-red-600 dark:bg-red-900/30 dark:text-red-400">{errors.root.message}</div>
+        )}
 
-        <form onSubmit={handleSubmit} className="mt-6 space-y-4">
+        <form onSubmit={handleSubmit(onSubmit)} className="mt-6 space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">I am a</label>
             <div className="mt-1 flex gap-3">
               {(['tenant', 'landlord'] as const).map((r) => (
                 <button type="button" key={r}
-                  onClick={() => set('role', r)}
+                  onClick={() => setValue('role', r)}
                   className={`flex-1 rounded-lg border py-2 text-sm font-medium capitalize transition ${
-                    form.role === r
+                    role === r
                       ? 'border-emerald-500 bg-emerald-50 text-emerald-700 dark:border-emerald-500 dark:bg-emerald-900/30 dark:text-emerald-400'
                       : 'text-gray-600 hover:border-gray-400 dark:text-gray-400 dark:hover:border-gray-500'
                   }`}>
@@ -54,24 +52,33 @@ export default function RegisterPage() {
             </div>
           </div>
 
-          {[
-            { label: 'Full Name', key: 'full_name', type: 'text' },
-            { label: 'Email', key: 'email', type: 'email' },
-            { label: 'Phone (optional)', key: 'phone', type: 'tel' },
-            { label: 'Password', key: 'password', type: 'password' },
-          ].map(({ label, key, type }) => (
-            <div key={key}>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">{label}</label>
-              <input type={type} required={key !== 'phone'}
-                value={form[key as keyof typeof form]}
-                onChange={(e) => set(key, e.target.value)}
-                className="mt-1 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100" />
-            </div>
-          ))}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Full Name</label>
+            <input type="text" {...register('full_name')}
+              className="mt-1 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100" />
+            {errors.full_name && <p className="mt-1 text-xs text-red-600 dark:text-red-400">{errors.full_name.message}</p>}
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Email</label>
+            <input type="email" {...register('email')}
+              className="mt-1 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100" />
+            {errors.email && <p className="mt-1 text-xs text-red-600 dark:text-red-400">{errors.email.message}</p>}
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Phone (optional)</label>
+            <input type="tel" {...register('phone')}
+              className="mt-1 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100" />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Password</label>
+            <input type="password" {...register('password')}
+              className="mt-1 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100" />
+            {errors.password && <p className="mt-1 text-xs text-red-600 dark:text-red-400">{errors.password.message}</p>}
+          </div>
 
-          <button type="submit" disabled={loading}
+          <button type="submit" disabled={isSubmitting}
             className="w-full rounded-lg bg-emerald-600 py-2.5 text-sm font-semibold text-white hover:bg-emerald-700 disabled:opacity-50">
-            {loading ? 'Creating account…' : 'Create account'}
+            {isSubmitting ? 'Creating account…' : 'Create account'}
           </button>
         </form>
 

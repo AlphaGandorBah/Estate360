@@ -1,10 +1,11 @@
 import { useState } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { listingsApi, panoramasApi, reportsApi, messagingApi } from '@/api'
+import { listingsApi, panoramasApi, reportsApi, messagingApi, savedApi } from '@/api'
 import { useAuthStore } from '@/store/auth'
 import { formatPrice, formatDate, AREA_LABELS, PROPERTY_LABELS } from '@/lib/utils'
 import PanoramaViewer from '@/components/listings/PanoramaViewer'
+import LocationMap from '@/components/listings/LocationMap'
 import type { ReportReason } from '@/types'
 
 export default function ListingDetailPage() {
@@ -34,7 +35,7 @@ export default function ListingDetailPage() {
 
   const { data: savedData } = useQuery({
     queryKey: ['saved', 1],
-    queryFn: () => import('@/api').then((m) => m.savedApi.list(1).then((r) => r.data)),
+    queryFn: () => savedApi.list(1).then((r) => r.data),
     enabled: user?.role === 'tenant',
   })
   const isSaved = savedData?.results.some((s) => s.listing.id === listingId) ?? false
@@ -136,6 +137,14 @@ export default function ListingDetailPage() {
         <div>
           <h2 className="font-semibold text-gray-900 dark:text-gray-100">Description</h2>
           <p className="mt-2 whitespace-pre-line text-sm text-gray-600 dark:text-gray-300">{listing.description}</p>
+        </div>
+
+        {/* Location */}
+        <div>
+          <h2 className="font-semibold text-gray-900 dark:text-gray-100">Location</h2>
+          <div className="mt-2">
+            <LocationMap lat={listing.lat} lng={listing.lng} area={listing.location_area} />
+          </div>
         </div>
 
         {/* Report */}

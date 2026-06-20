@@ -1,11 +1,15 @@
-import { useState, useEffect } from 'react'
+import { useEffect } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
 import { listingsApi, panoramasApi } from '@/api'
 import { AREA_LABELS, PROPERTY_LABELS, getErrorMessage } from '@/lib/utils'
+import { listingSchema, applyServerErrors, type ListingForm } from '@/lib/validation'
 import { useAuthStore } from '@/store/auth'
 import PanoramaManager from '@/components/listings/PanoramaManager'
-import type { ListingWritePayload, LocationArea, PropertyType } from '@/types'
+import LocationPicker from '@/components/listings/LocationPicker'
+import type { LocationArea, PropertyType } from '@/types'
 
 const AREAS = Object.entries(AREA_LABELS) as [LocationArea, string][]
 const TYPES = Object.entries(PROPERTY_LABELS) as [PropertyType, string][]
@@ -16,9 +20,13 @@ export default function EditListingPage() {
   const navigate = useNavigate()
   const qc = useQueryClient()
   const user = useAuthStore((s) => s.user)
-  const [form, setForm] = useState<ListingWritePayload | null>(null)
-  const [error, setError] = useState('')
-  const [loading, setLoading] = useState(false)
+
+  const {
+    register, handleSubmit, setError, watch, setValue, reset,
+    formState: { errors, isSubmitting, isDirty },
+  } = useForm<ListingForm>({ resolver: zodResolver(listingSchema) })
+  const lat = watch('lat')
+  const lng = watch('lng')
 
   const { data: listing } = useQuery({
     queryKey: ['listing', listingId],
@@ -43,7 +51,7 @@ export default function EditListingPage() {
 
   useEffect(() => {
     if (!listing) return
-    setForm({
+    reset({
       title: listing.title,
       description: listing.description,
       property_type: listing.property_type,
@@ -52,23 +60,18 @@ export default function EditListingPage() {
       bathrooms: listing.bathrooms,
       price_annual: listing.price_annual,
       currency: listing.currency,
+      lat: listing.lat,
+      lng: listing.lng,
     })
-  }, [listing])
+  }, [listing, reset])
 
-  const set = <K extends keyof ListingWritePayload>(k: K, v: ListingWritePayload[K]) =>
-    setForm((f) => f ? { ...f, [k]: v } : f)
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!form) return
-    setError('')
-    setLoading(true)
+  const onSubmit = async (form: ListingForm) => {
     try {
-      await listingsApi.update(listingId, form)
+      await listingsApi.update(listingId, { ...form, lat: form.lat ?? undefined, lng: form.lng ?? undefined })
       navigate(`/listings/${listingId}`)
-    } catch (err: unknown) {
-      setError(getErrorMessage(err, 'Update failed'))
-    } finally { setLoading(false) }
+    } catch (err) {
+      applyServerErrors(err, setError, 'Update failed')
+    }
   }
 
   const handleDelete = async () => {
@@ -77,7 +80,7 @@ export default function EditListingPage() {
     navigate('/my-listings')
   }
 
-  if (!form) return <div className="h-64 animate-pulse rounded-xl bg-gray-100 dark:bg-gray-800" />
+  if (!listing) return <div className="h-64 animate-pulse rounded-xl bg-gray-100 dark:bg-gray-800" />
 
   return (
     <div className="mx-auto max-w-2xl">
@@ -89,26 +92,27 @@ export default function EditListingPage() {
         </button>
       </div>
 
-      {error && <div className="mt-4 rounded-lg bg-red-50 p-3 text-sm text-red-600 dark:bg-red-900/30 dark:text-red-400">{error}</div>}
+      {errors.root?.message && (
+        <div className="mt-4 rounded-lg bg-red-50 p-3 text-sm text-red-600 dark:bg-red-900/30 dark:text-red-400">{errors.root.message}</div>
+      )}
 
-      <form onSubmit={handleSubmit} className="mt-6 space-y-5">
+      <form onSubmit={handleSubmit(onSubmit)} className="mt-6 space-y-5">
         <div>
           <label className="label">Title</label>
-          <input required value={form.title} onChange={(e) => set('title', e.target.value)} className="input" />
+          <input {...register('title')} className="input" />
+          {errors.title && <p className="mt-1 text-xs text-red-600 dark:text-red-400">{errors.title.message}</p>}
         </div>
 
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="label">Property type</label>
-            <select value={form.property_type}
-              onChange={(e) => set('property_type', e.target.value as PropertyType)} className="input">
+            <select {...register('property_type')} className="input">
               {TYPES.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
             </select>
           </div>
           <div>
             <label className="label">Area</label>
-            <select value={form.location_area}
-              onChange={(e) => set('location_area', e.target.value as LocationArea)} className="input">
+            <select {...register('location_area')} className="input">
               {AREAS.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
             </select>
           </div>
@@ -116,44 +120,47 @@ export default function EditListingPage() {
 
         <div>
           <label className="label">Description</label>
-          <textarea required value={form.description} rows={5}
-            onChange={(e) => set('description', e.target.value)} className="input resize-none" />
+          <textarea {...register('description')} rows={5} className="input resize-none" />
+          {errors.description && <p className="mt-1 text-xs text-red-600 dark:text-red-400">{errors.description.message}</p>}
         </div>
 
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="label">Bedrooms</label>
-            <input type="number" min={0} value={form.bedrooms ?? 0}
-              onChange={(e) => set('bedrooms', +e.target.value)} className="input" />
+            <input type="number" min={0} {...register('bedrooms', { valueAsNumber: true })} className="input" />
           </div>
           <div>
             <label className="label">Bathrooms</label>
-            <input type="number" min={0} value={form.bathrooms ?? 0}
-              onChange={(e) => set('bathrooms', +e.target.value)} className="input" />
+            <input type="number" min={0} {...register('bathrooms', { valueAsNumber: true })} className="input" />
           </div>
         </div>
 
         <div>
           <label className="label">Annual rent</label>
-          <input type="number" min={1} required placeholder="e.g. 12000000"
-            value={form.price_annual || ''}
-            onChange={(e) => set('price_annual', e.target.value === '' ? 0 : +e.target.value)}
-            className="input" />
+          <input type="number" min={1} {...register('price_annual', { valueAsNumber: true })} className="input" />
+          {errors.price_annual && <p className="mt-1 text-xs text-red-600 dark:text-red-400">{errors.price_annual.message}</p>}
         </div>
 
         <div>
           <label className="label">Currency</label>
-          <select value={form.currency ?? 'SLE'}
-            onChange={(e) => set('currency', e.target.value as 'SLE' | 'USD')}
-            className="input w-40">
+          <select {...register('currency')} className="input w-40">
             <option value="SLE">SLE</option>
             <option value="USD">USD</option>
           </select>
         </div>
 
-        <button type="submit" disabled={loading}
+        <div>
+          <label className="label">Exact location (optional)</label>
+          <LocationPicker
+            lat={lat ?? null}
+            lng={lng ?? null}
+            onChange={(newLat, newLng) => { setValue('lat', newLat, { shouldDirty: true }); setValue('lng', newLng, { shouldDirty: true }) }}
+          />
+        </div>
+
+        <button type="submit" disabled={isSubmitting || !isDirty}
           className="w-full rounded-lg bg-emerald-600 py-3 font-semibold text-white hover:bg-emerald-700 disabled:opacity-50">
-          {loading ? 'Saving…' : 'Save changes'}
+          {isSubmitting ? 'Saving…' : 'Save changes'}
         </button>
       </form>
 
