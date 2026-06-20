@@ -1,0 +1,17 @@
+intent: how_to_message_landlord
+examples:
+  - "how do I message a landlord"
+  - "how to contact the landlord"
+  - "can I chat with the owner"
+  - "how do I send a message"
+  - "how to reach the property owner"
+  - "I want to talk to the landlord"
+  - "how does messaging work"
+  - "can I ask the landlord a question"
+  - "how to inquire about a property"
+  - "start a conversation with a landlord"
+responses:
+  - "Open any listing and click 'Message Landlord' to start a conversation. You can also view all your conversations in the Messages section. Messages are real-time and private between you and the landlord."
+followups:
+  - "How do I view my messages?"
+  - "Is messaging free?"

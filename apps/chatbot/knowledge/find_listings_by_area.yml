@@ -1,0 +1,22 @@
+intent: find_listings_by_area
+examples:
+  - "show me apartments in Aberdeen"
+  - "any houses in Lumley?"
+  - "what's available at Hill Station"
+  - "find property in Goderich"
+  - "listings in Wilberforce"
+  - "rent a room in Brookfields"
+  - "show me properties in Kissy"
+  - "what's for rent in Wellington"
+  - "houses in Murray Town"
+  - "available in Calaba Town"
+slots:
+  - name: area
+    type: enum
+    values: [aberdeen, lumley, goderich, hill_station, wilberforce, murray_town, brookfields, kissy, wellington, calaba_town]
+responses:
+  - "Here are listings in {area}. You can also use the search filters to narrow further."
+followups:
+  - "Filter by price range"
+  - "Filter by bedrooms"
+  - "Filter by property type"

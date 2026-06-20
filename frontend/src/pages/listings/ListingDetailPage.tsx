@@ -1,0 +1,244 @@
+import { useState } from 'react'
+import { useParams, useNavigate, Link } from 'react-router-dom'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { listingsApi, panoramasApi, reportsApi, messagingApi } from '@/api'
+import { useAuthStore } from '@/store/auth'
+import { formatPrice, formatDate, AREA_LABELS, PROPERTY_LABELS } from '@/lib/utils'
+import PanoramaViewer from '@/components/listings/PanoramaViewer'
+import type { ReportReason } from '@/types'
+
+export default function ListingDetailPage() {
+  const { id } = useParams<{ id: string }>()
+  const listingId = Number(id)
+  const user = useAuthStore((s) => s.user)
+  const navigate = useNavigate()
+  const qc = useQueryClient()
+
+  const [reportReason, setReportReason] = useState<ReportReason | ''>('')
+  const [reportDesc, setReportDesc] = useState('')
+  const [showReport, setShowReport] = useState(false)
+  const [contactMsg, setContactMsg] = useState('')
+  const [showContact, setShowContact] = useState(false)
+  const [activeThumb, setActiveThumb] = useState(0)
+
+  const { data: listing, isLoading } = useQuery({
+    queryKey: ['listing', listingId],
+    queryFn: () => listingsApi.get(listingId).then((r) => r.data),
+  })
+
+  const { data: panoramaRes } = useQuery({
+    queryKey: ['panoramas', listingId],
+    queryFn: () => panoramasApi.list(listingId).then((r) => r.data),
+    enabled: !!listing,
+  })
+
+  const { data: savedData } = useQuery({
+    queryKey: ['saved', 1],
+    queryFn: () => import('@/api').then((m) => m.savedApi.list(1).then((r) => r.data)),
+    enabled: user?.role === 'tenant',
+  })
+  const isSaved = savedData?.results.some((s) => s.listing.id === listingId) ?? false
+
+  const saveMut = useMutation({
+    mutationFn: () => (isSaved ? listingsApi.unsave(listingId) : listingsApi.save(listingId)),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['saved'] }),
+  })
+
+  const reportMut = useMutation({
+    mutationFn: () => reportsApi.create({
+      listing: listingId,
+      reason: reportReason as ReportReason,
+      description: reportDesc,
+    }),
+    onSuccess: () => { setShowReport(false); setReportReason(''); setReportDesc('') },
+  })
+
+  const contactMut = useMutation({
+    mutationFn: async () => {
+      const r = await messagingApi.startConversation({
+        landlord_id: listing!.owner_id,
+        listing_id: listingId,
+        initial_message: contactMsg,
+      })
+      return r.data.id
+    },
+    onSuccess: (convId) => navigate(`/conversations/${convId}`),
+  })
+
+  const panoramas = panoramaRes?.results ?? []
+
+  if (isLoading) return (
+    <div className="space-y-4">
+      <div className="h-72 animate-pulse rounded-2xl bg-gray-200 dark:bg-gray-700" />
+      <div className="h-8 w-1/3 animate-pulse rounded bg-gray-200 dark:bg-gray-700" />
+    </div>
+  )
+
+  if (!listing) return <div className="py-16 text-center text-gray-500 dark:text-gray-400">Listing not found</div>
+
+  return (
+    <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
+      {/* Main */}
+      <div className="lg:col-span-2 space-y-6">
+        {/* 360 viewer + thumbnails / placeholder */}
+        {panoramas.length > 0 ? (
+          <div>
+            <PanoramaViewer panorama={panoramas[activeThumb]} />
+            {panoramas.length > 1 && (
+              <div className="mt-2 flex gap-2 overflow-x-auto">
+                {panoramas.map((p, i) => (
+                  <button key={p.id} onClick={() => setActiveThumb(i)}
+                    className={`h-16 w-20 shrink-0 overflow-hidden rounded-lg border-2 ${i === activeThumb ? 'border-emerald-500' : 'border-transparent'}`}>
+                    <img src={p.thumbnail_url ?? ''} alt="" className="h-full w-full object-cover" />
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="flex h-72 items-center justify-center rounded-2xl bg-gray-100 text-gray-400 dark:bg-gray-800 dark:text-gray-500">
+            No images
+          </div>
+        )}
+
+        {/* Badges + title */}
+        <div>
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-medium text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400">
+              {PROPERTY_LABELS[listing.property_type]}
+            </span>
+            <span className="rounded-full bg-blue-100 px-3 py-1 text-xs font-medium text-blue-700 dark:bg-blue-900/30 dark:text-blue-400">
+              {AREA_LABELS[listing.location_area]}
+            </span>
+            {listing.owner_verified && (
+              <span className="rounded-full bg-yellow-100 px-3 py-1 text-xs font-medium text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400">
+                Verified
+              </span>
+            )}
+          </div>
+          <h1 className="mt-3 text-2xl font-bold text-gray-900 dark:text-gray-100">{listing.title}</h1>
+        </div>
+
+        {/* Details grid */}
+        <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+          {[
+            { label: 'Bedrooms', value: listing.bedrooms },
+            { label: 'Bathrooms', value: listing.bathrooms },
+          ].map((d) => (
+            <div key={d.label} className="rounded-xl border border-gray-200 bg-white p-4 text-center dark:border-gray-700 dark:bg-gray-800">
+              <div className="text-2xl font-bold text-gray-900 dark:text-gray-100">{d.value ?? '—'}</div>
+              <div className="text-xs text-gray-500 dark:text-gray-400">{d.label}</div>
+            </div>
+          ))}
+        </div>
+
+        {/* Description */}
+        <div>
+          <h2 className="font-semibold text-gray-900 dark:text-gray-100">Description</h2>
+          <p className="mt-2 whitespace-pre-line text-sm text-gray-600 dark:text-gray-300">{listing.description}</p>
+        </div>
+
+        {/* Report */}
+        {user && (
+          <div>
+            <button onClick={() => setShowReport(!showReport)}
+              className="text-xs text-gray-400 hover:text-red-500 dark:text-gray-500 dark:hover:text-red-400">Report this listing</button>
+            {showReport && (
+              <div className="mt-2 rounded-xl border border-gray-200 p-4 dark:border-gray-700">
+                <select value={reportReason} onChange={(e) => setReportReason(e.target.value as ReportReason)}
+                  className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100">
+                  <option value="">Select reason</option>
+                  {(['fake_listing', 'misleading', 'scam', 'wrong_price', 'not_available', 'other'] as ReportReason[]).map((r) => (
+                    <option key={r} value={r}>{r.replace('_', ' ')}</option>
+                  ))}
+                </select>
+                <textarea value={reportDesc} onChange={(e) => setReportDesc(e.target.value)}
+                  placeholder="Additional details…" rows={3}
+                  className="mt-2 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100" />
+                <button onClick={() => reportMut.mutate()} disabled={!reportReason || reportMut.isPending}
+                  className="mt-2 rounded-lg bg-red-600 px-4 py-2 text-sm text-white disabled:opacity-50">
+                  {reportMut.isPending ? 'Submitting…' : 'Submit report'}
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Sidebar */}
+      <div className="space-y-4">
+        <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+          <div className="text-3xl font-bold text-emerald-600 dark:text-emerald-400">
+            {formatPrice(listing.price_annual, listing.currency)}
+            <span className="text-base font-normal text-gray-500 dark:text-gray-400">/yr</span>
+          </div>
+
+          {user?.role === 'tenant' && (
+            <>
+              <button onClick={() => saveMut.mutate()} disabled={saveMut.isPending}
+                className={`mt-4 w-full rounded-lg border py-2.5 text-sm font-semibold transition ${
+                  isSaved
+                    ? 'border-gray-300 bg-emerald-50 text-emerald-700 dark:border-gray-600 dark:bg-emerald-900/30 dark:text-emerald-400'
+                    : 'border-gray-300 text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700'
+                }`}>
+                {isSaved ? 'Saved' : 'Save listing'}
+              </button>
+              <button onClick={() => setShowContact(true)}
+                className="mt-2 w-full rounded-lg bg-emerald-600 py-2.5 text-sm font-semibold text-white hover:bg-emerald-700">
+                Contact landlord
+              </button>
+            </>
+          )}
+
+          {user?.role === 'landlord' && user.id === listing.owner_id && (
+            <Link to={`/listings/${listingId}/edit`}
+              className="mt-4 block w-full rounded-lg border border-gray-300 py-2.5 text-center text-sm font-semibold text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700">
+              Edit listing
+            </Link>
+          )}
+        </div>
+
+        {/* Owner card */}
+        <div className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-700 dark:bg-gray-800">
+          <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-300">Listed by</h2>
+          <Link to={`/profile/${listing.owner_id}`}
+            className="mt-3 flex items-center gap-3 hover:opacity-80">
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-emerald-100 text-sm font-semibold text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400">
+              {listing.owner_name?.[0] ?? '?'}
+            </div>
+            <div>
+              <div className="font-medium text-gray-900 dark:text-gray-100">{listing.owner_name}</div>
+              {listing.owner_verified && (
+                <div className="text-xs text-yellow-600 dark:text-yellow-400">Verified landlord</div>
+              )}
+            </div>
+          </Link>
+        </div>
+
+        <div className="text-xs text-gray-400 dark:text-gray-500">
+          Listed {formatDate(listing.created_at)} · Updated {formatDate(listing.updated_at)}
+        </div>
+      </div>
+
+      {/* Contact modal */}
+      {showContact && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="w-full max-w-md rounded-2xl bg-white p-6 dark:bg-gray-800">
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Contact landlord</h2>
+            <textarea value={contactMsg} onChange={(e) => setContactMsg(e.target.value)}
+              placeholder="Hi, I'm interested in this property…" rows={4}
+              className="mt-4 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100" />
+            <div className="mt-4 flex gap-3">
+              <button onClick={() => setShowContact(false)}
+                className="flex-1 rounded-lg border border-gray-300 py-2.5 text-sm text-gray-700 dark:border-gray-600 dark:text-gray-300">Cancel</button>
+              <button onClick={() => contactMut.mutate()} disabled={!contactMsg || contactMut.isPending}
+                className="flex-1 rounded-lg bg-emerald-600 py-2.5 text-sm text-white disabled:opacity-50">
+                {contactMut.isPending ? 'Sending…' : 'Send message'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}

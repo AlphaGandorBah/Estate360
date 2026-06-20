@@ -1,0 +1,17 @@
+intent: how_to_save_listing
+examples:
+  - "how do I save a listing"
+  - "how to favourite a property"
+  - "can I bookmark a listing"
+  - "save a property for later"
+  - "how to add to favourites"
+  - "how do I shortlist a property"
+  - "how to save properties I like"
+  - "where are my saved listings"
+  - "how to view saved properties"
+  - "how to unsave a listing"
+responses:
+  - "Click the heart icon on any listing to save it to your favourites. View all your saved listings in the 'Saved' section of your account. You can unsave at any time by clicking the heart icon again."
+followups:
+  - "How do I view my saved listings?"
+  - "Can I get recommendations based on saved listings?"

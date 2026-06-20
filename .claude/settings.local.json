@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(xargs grep -ln \"is_admin\\\\|AdminRole\\\\|UserList\\\\|all_users\\\\|list.*user\" -i)",
+      "Bash(xargs grep -ln \"admin/users\\\\|AdminUsers\\\\|createBrowserRouter\\\\|Routes>\")"
+    ]
+  }
+}

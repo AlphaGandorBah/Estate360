@@ -1,0 +1,17 @@
+intent: report_fraud_help
+examples:
+  - "how do I report a listing"
+  - "I want to report fraud"
+  - "this listing is fake"
+  - "how to report a scam"
+  - "suspicious landlord"
+  - "report a fraudulent property"
+  - "I think I'm being scammed"
+  - "how do I flag a listing"
+  - "report bad landlord"
+  - "fake property listing"
+responses:
+  - "To report a listing or user, go to the listing page and click 'Report'. Provide details about why you believe it is fraudulent. Our admin team will review it within 48 hours."
+followups:
+  - "What happens after I report?"
+  - "How do I report a landlord directly?"

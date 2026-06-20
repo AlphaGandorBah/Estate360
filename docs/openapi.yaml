@@ -1,0 +1,681 @@
+openapi: 3.0.3
+info:
+  title: Estate360 API
+  version: 1.0.0
+  description: Real estate marketplace for Freetown, Sierra Leone.
+paths:
+  /api/v1/admin/listings:
+    get:
+      operationId: admin_listings_retrieve
+      description: GET /admin/listings — pending approval queue.
+      tags:
+      - admin
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/admin/listings/{id}/decision:
+    post:
+      operationId: admin_listings_decision_create
+      description: POST /admin/listings/{id}/decision
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - admin
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/admin/reports:
+    get:
+      operationId: admin_reports_retrieve
+      tags:
+      - admin
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/admin/reports/{id}/resolve:
+    post:
+      operationId: admin_reports_resolve_create
+      description: |-
+        Mixin for ViewSets/APIViews that enforces idempotency on POST/PUT.
+
+        Add to view classes that handle retry-prone mutations. The view's
+        `perform_create` / handler must call `self.set_idempotency_done(response)`
+        after building the final Response.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - admin
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/admin/verifications:
+    get:
+      operationId: admin_verifications_retrieve
+      tags:
+      - admin
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/admin/verifications/{id}/decision:
+    post:
+      operationId: admin_verifications_decision_create
+      description: |-
+        Mixin for ViewSets/APIViews that enforces idempotency on POST/PUT.
+
+        Add to view classes that handle retry-prone mutations. The view's
+        `perform_create` / handler must call `self.set_idempotency_done(response)`
+        after building the final Response.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - admin
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/auth/login:
+    post:
+      operationId: auth_login_create
+      tags:
+      - auth
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/v1/auth/logout:
+    post:
+      operationId: auth_logout_create
+      description: |-
+        Mixin for ViewSets/APIViews that enforces idempotency on POST/PUT.
+
+        Add to view classes that handle retry-prone mutations. The view's
+        `perform_create` / handler must call `self.set_idempotency_done(response)`
+        after building the final Response.
+      tags:
+      - auth
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/auth/password-reset:
+    post:
+      operationId: auth_password_reset_create
+      description: |-
+        Mixin for ViewSets/APIViews that enforces idempotency on POST/PUT.
+
+        Add to view classes that handle retry-prone mutations. The view's
+        `perform_create` / handler must call `self.set_idempotency_done(response)`
+        after building the final Response.
+      tags:
+      - auth
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/v1/auth/password-reset/confirm:
+    post:
+      operationId: auth_password_reset_confirm_create
+      description: |-
+        Mixin for ViewSets/APIViews that enforces idempotency on POST/PUT.
+
+        Add to view classes that handle retry-prone mutations. The view's
+        `perform_create` / handler must call `self.set_idempotency_done(response)`
+        after building the final Response.
+      tags:
+      - auth
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/v1/auth/refresh:
+    post:
+      operationId: auth_refresh_create
+      tags:
+      - auth
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/v1/auth/register:
+    post:
+      operationId: auth_register_create
+      description: |-
+        Mixin for ViewSets/APIViews that enforces idempotency on POST/PUT.
+
+        Add to view classes that handle retry-prone mutations. The view's
+        `perform_create` / handler must call `self.set_idempotency_done(response)`
+        after building the final Response.
+      tags:
+      - auth
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/v1/auth/verify-email:
+    post:
+      operationId: auth_verify_email_create
+      tags:
+      - auth
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/v1/auth/verify-email/resend:
+    post:
+      operationId: auth_verify_email_resend_create
+      tags:
+      - auth
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/v1/chatbot/query:
+    post:
+      operationId: chatbot_query_create
+      tags:
+      - chatbot
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/v1/conversations/:
+    get:
+      operationId: conversations_retrieve
+      description: GET /conversations   POST /conversations
+      tags:
+      - conversations
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+    post:
+      operationId: conversations_create
+      description: GET /conversations   POST /conversations
+      tags:
+      - conversations
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/conversations/{id}/messages:
+    get:
+      operationId: conversations_messages_retrieve
+      description: |-
+        GET  /conversations/{id}/messages  — paginated history
+        POST /conversations/{id}/messages  — send message (REST fallback)
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - conversations
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+    post:
+      operationId: conversations_messages_create
+      description: |-
+        GET  /conversations/{id}/messages  — paginated history
+        POST /conversations/{id}/messages  — send message (REST fallback)
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - conversations
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/listings/:
+    get:
+      operationId: listings_retrieve
+      description: GET /listings  (public) — POST /listings  (verified landlord).
+      tags:
+      - listings
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+    post:
+      operationId: listings_create
+      description: GET /listings  (public) — POST /listings  (verified landlord).
+      tags:
+      - listings
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/listings/{id}:
+    get:
+      operationId: listings_retrieve_2
+      description: GET /listings/{id}, PATCH /listings/{id}, DELETE /listings/{id}.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - listings
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+    patch:
+      operationId: listings_partial_update
+      description: GET /listings/{id}, PATCH /listings/{id}, DELETE /listings/{id}.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - listings
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+    delete:
+      operationId: listings_destroy
+      description: GET /listings/{id}, PATCH /listings/{id}, DELETE /listings/{id}.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - listings
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/listings/{id}/panoramas:
+    get:
+      operationId: listings_panoramas_retrieve
+      description: GET /listings/{id}/panoramas   POST /listings/{id}/panoramas
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - listings
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+    post:
+      operationId: listings_panoramas_create
+      description: GET /listings/{id}/panoramas   POST /listings/{id}/panoramas
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - listings
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/listings/{id}/save:
+    post:
+      operationId: listings_save_create
+      description: POST /listings/{id}/save   DELETE /listings/{id}/save
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - listings
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+    delete:
+      operationId: listings_save_destroy
+      description: POST /listings/{id}/save   DELETE /listings/{id}/save
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - listings
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/listings/{id}/submit:
+    post:
+      operationId: listings_submit_create
+      description: POST /listings/{id}/submit
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - listings
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/notifications/:
+    get:
+      operationId: notifications_retrieve
+      tags:
+      - notifications
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/notifications/{id}/read:
+    post:
+      operationId: notifications_read_create
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - notifications
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/notifications/read-all:
+    post:
+      operationId: notifications_read_all_create
+      tags:
+      - notifications
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/panoramas/{id}:
+    get:
+      operationId: panoramas_retrieve
+      description: GET /panoramas/{id}   DELETE /panoramas/{id}
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - panoramas
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+    delete:
+      operationId: panoramas_destroy
+      description: GET /panoramas/{id}   DELETE /panoramas/{id}
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - panoramas
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/preferences/me:
+    get:
+      operationId: preferences_me_retrieve
+      description: |-
+        Mixin for ViewSets/APIViews that enforces idempotency on POST/PUT.
+
+        Add to view classes that handle retry-prone mutations. The view's
+        `perform_create` / handler must call `self.set_idempotency_done(response)`
+        after building the final Response.
+      tags:
+      - preferences
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+    put:
+      operationId: preferences_me_update
+      description: |-
+        Mixin for ViewSets/APIViews that enforces idempotency on POST/PUT.
+
+        Add to view classes that handle retry-prone mutations. The view's
+        `perform_create` / handler must call `self.set_idempotency_done(response)`
+        after building the final Response.
+      tags:
+      - preferences
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/preferences/set:
+    get:
+      operationId: preferences_set_retrieve
+      description: |-
+        Mixin for ViewSets/APIViews that enforces idempotency on POST/PUT.
+
+        Add to view classes that handle retry-prone mutations. The view's
+        `perform_create` / handler must call `self.set_idempotency_done(response)`
+        after building the final Response.
+      tags:
+      - preferences
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+    put:
+      operationId: preferences_set_update
+      description: |-
+        Mixin for ViewSets/APIViews that enforces idempotency on POST/PUT.
+
+        Add to view classes that handle retry-prone mutations. The view's
+        `perform_create` / handler must call `self.set_idempotency_done(response)`
+        after building the final Response.
+      tags:
+      - preferences
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/recommendations/:
+    get:
+      operationId: recommendations_retrieve
+      tags:
+      - recommendations
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/reports/:
+    post:
+      operationId: reports_create
+      description: |-
+        Mixin for ViewSets/APIViews that enforces idempotency on POST/PUT.
+
+        Add to view classes that handle retry-prone mutations. The view's
+        `perform_create` / handler must call `self.set_idempotency_done(response)`
+        after building the final Response.
+      tags:
+      - reports
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/saved/:
+    get:
+      operationId: saved_retrieve
+      description: GET /saved
+      tags:
+      - saved
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/users/{id}/public:
+    get:
+      operationId: users_public_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - users
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/v1/users/me:
+    get:
+      operationId: users_me_retrieve
+      tags:
+      - users
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+    patch:
+      operationId: users_me_partial_update
+      tags:
+      - users
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+    delete:
+      operationId: users_me_destroy
+      tags:
+      - users
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/verification/:
+    post:
+      operationId: verification_create
+      description: |-
+        Mixin for ViewSets/APIViews that enforces idempotency on POST/PUT.
+
+        Add to view classes that handle retry-prone mutations. The view's
+        `perform_create` / handler must call `self.set_idempotency_done(response)`
+        after building the final Response.
+      tags:
+      - verification
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/verification/me:
+    get:
+      operationId: verification_me_retrieve
+      tags:
+      - verification
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+components:
+  securitySchemes:
+    jwtAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT

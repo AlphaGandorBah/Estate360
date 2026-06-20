@@ -1,0 +1,17 @@
+intent: pricing_info
+examples:
+  - "how much does rent cost"
+  - "what is the average rent in Freetown"
+  - "how is pricing shown"
+  - "are prices monthly or yearly"
+  - "what currency is used"
+  - "how much is a house in Aberdeen"
+  - "rent prices in Lumley"
+  - "is price per month or per year"
+  - "what currency are listings in"
+  - "do prices include utilities"
+responses:
+  - "All prices on Estate360 are quoted annually, as is the standard in Freetown. Listings show prices in Sierra Leonean Leone (SLE) or US Dollars (USD). Utilities are not included unless specified by the landlord in the description."
+followups:
+  - "How do I filter by price?"
+  - "Can I see listings in USD?"
