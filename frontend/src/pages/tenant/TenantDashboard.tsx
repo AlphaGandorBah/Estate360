@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query'
 import { savedApi, messagingApi, notificationsApi, recommendationsApi } from '@/api'
 import { useAuthStore } from '@/lib/auth'
 import ListingCard from '@/components/listings/ListingCard'
+import Avatar from '@/components/common/Avatar'
 import type { Conversation } from '@/types'
 
 export default function TenantDashboard() {
@@ -34,7 +35,7 @@ export default function TenantDashboard() {
   const displayName = user?.email.split('@')[0] ?? 'there'
 
   const otherName = (c: Conversation) =>
-    user?.role === 'landlord' ? c.tenant_name : c.landlord_name
+    c.is_support ? 'Admin Support' : c.landlord_name
 
   return (
     <div className="space-y-8">
@@ -85,6 +86,7 @@ export default function TenantDashboard() {
             {conversations?.results.slice(0, 3).map((c) => (
               <Link key={c.id} to={`/conversations/${c.id}`}
                 className="flex items-center gap-4 rounded-xl border border-gray-200 bg-white p-4 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:hover:bg-gray-700">
+                <Avatar name={otherName(c)} />
                 <div className="flex-1 min-w-0">
                   <div className="font-medium text-gray-900 truncate dark:text-gray-100">{otherName(c)}</div>
                   <div className="text-sm text-gray-500 truncate dark:text-gray-400">

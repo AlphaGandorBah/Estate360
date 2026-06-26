@@ -7,4 +7,9 @@ export const usersApi = {
   deleteMe: () => api.delete('/users/me'),
   publicProfile: (id: string) => api.get<PublicUser>(`/users/${id}/public`),
   getProfile: (id: number | string) => api.get<PublicUser>(`/users/${id}/public`),
+  uploadAvatar: (file: File) => {
+    const fd = new FormData(); fd.append('avatar', file)
+    return api.post<User>('/users/me/avatar', fd, { headers: { 'Content-Type': 'multipart/form-data' } })
+  },
+  deleteAvatar: () => api.delete<User>('/users/me/avatar'),
 }

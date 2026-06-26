@@ -39,7 +39,8 @@ export const mockSaved: SavedListing[] = []
 
 export const mockConversations: Conversation[] = [
   {
-    id: 1, tenant_id: 'u1', tenant_name: 'Aminata Koroma', landlord_id: 'u2', landlord_name: 'Mohamed Bah',
+    id: 1, initiator_id: 'u1', initiator_name: 'Aminata Koroma', initiator_role: 'tenant',
+    landlord_id: 'u2', landlord_name: 'Mohamed Bah', is_support: false,
     listing_id: 1, last_message_at: '2025-06-10T12:00:00Z', unread_count: 1, created_at: '2025-06-10T11:00:00Z',
   },
 ]

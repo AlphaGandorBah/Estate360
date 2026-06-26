@@ -69,9 +69,21 @@ class AdminReportListView(APIView):
     throttle_classes = [ReadThrottle]
     throttle_scope = "read"
 
+    STATUS_FILTERS = {
+        "open": [FraudReport.STATUS_OPEN, FraudReport.STATUS_REVIEWING],
+        "resolved": [FraudReport.STATUS_RESOLVED],
+        "dismissed": [FraudReport.STATUS_DISMISSED],
+    }
+
     def get(self, request: Request) -> Response:
+        status_param = request.GET.get("status", "open")
+        if status_param not in self.STATUS_FILTERS:
+            return Response(
+                {"code": "invalid_status", "detail": f"status must be one of {sorted(self.STATUS_FILTERS)}"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
         qs = FraudReport.objects.filter(
-            status__in=[FraudReport.STATUS_OPEN, FraudReport.STATUS_REVIEWING]
+            status__in=self.STATUS_FILTERS[status_param]
         ).select_related("reporter", "listing", "reported_user").order_by("created_at")
         paginator = StandardPagination()
         page = paginator.paginate_queryset(qs, request)
@@ -95,7 +107,20 @@ class AdminReportDecisionView(IdempotencyMixin, APIView):
         serializer.is_valid(raise_exception=True)
 
         decision = serializer.validated_data["decision"]
+        action = serializer.validated_data.get("action")
         notes = serializer.validated_data.get("notes", "")
+
+        warn_target = report.reported_user or (report.listing.owner if report.listing else None)
+        if action == "remove_listing" and not report.listing:
+            return Response(
+                {"code": "no_listing", "detail": "This report has no listing attached to remove."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        if action == "warn" and not warn_target:
+            return Response(
+                {"code": "no_target", "detail": "This report has no reported user or listing owner to warn."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
         report.status = decision
         report.handled_by = request.user
@@ -103,12 +128,36 @@ class AdminReportDecisionView(IdempotencyMixin, APIView):
         report.resolution_notes = notes
         report.save()
 
+        from apps.common.models import AdminActionLog
+        from apps.notifications.models import Notification
+        from apps.notifications.utils import create_notification
+
+        if action == "remove_listing":
+            from apps.listings.models import ListingStatus
+            report.listing.status = ListingStatus.ARCHIVED
+            report.listing.save(update_fields=["status"])
+            AdminActionLog.objects.create(
+                admin=request.user, action=AdminActionLog.ACTION_DELETE_LISTING,
+                target_listing=report.listing,
+                notes=f"Removed via fraud report #{report.pk}" + (f": {notes}" if notes else ""),
+            )
+        elif action == "warn":
+            create_notification(
+                user=warn_target,
+                notif_type=Notification.TYPE_MODERATION_WARNING,
+                payload={"report_id": report.pk, "message": notes or "You've received a warning from our moderation team. Please review our community guidelines."},
+            )
+            AdminActionLog.objects.create(
+                admin=request.user, action=AdminActionLog.ACTION_WARN_USER,
+                target_user=warn_target,
+                notes=f"Warned via fraud report #{report.pk}" + (f": {notes}" if notes else ""),
+            )
+
         send_report_update_email.apply_async(
             args=[report.pk, decision, notes],
             headers={"request_id": getattr(request, "request_id", "-")},
         )
 
-        from apps.notifications.utils import create_notification
         create_notification(
             user=report.reporter,
             notif_type="report_update",

@@ -23,8 +23,13 @@ class User(AbstractBaseUser, PermissionsMixin):
     full_name = models.CharField(max_length=255)
     phone = models.CharField(max_length=30, blank=True)
     role = models.CharField(max_length=20, choices=ROLE_CHOICES, default=ROLE_TENANT)
+    avatar_key = models.CharField(max_length=500, blank=True)
     is_verified = models.BooleanField(default=False)
     is_active = models.BooleanField(default=True)
+    # Lighter than a ban: blocks creating listings/messaging, but the account
+    # can still log in and browse. A full ban uses is_active instead, which
+    # both the login backend and JWT auth already reject on every request.
+    is_restricted = models.BooleanField(default=False)
     is_staff = models.BooleanField(default=False)
     date_joined = models.DateTimeField(default=timezone.now)
     deleted_at = models.DateTimeField(null=True, blank=True)

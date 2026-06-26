@@ -10,8 +10,9 @@ examples:
   - "how do I flag a listing"
   - "report bad landlord"
   - "fake property listing"
+  - "how do I flag a fake landlord"
 responses:
-  - "To report a listing or user, go to the listing page and click 'Report'. Provide details about why you believe it is fraudulent. Our admin team will review it within 48 hours."
+  - "To report a listing, go to the listing page and click 'Report this listing' near the bottom, choose a reason, and add details. Our admin team reviews reports — typically within 48 hours."
 followups:
-  - "What happens after I report?"
-  - "How do I report a landlord directly?"
+  - "How do I contact support?"
+  - "Why is my account restricted?"

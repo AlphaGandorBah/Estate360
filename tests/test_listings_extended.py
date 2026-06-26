@@ -85,10 +85,33 @@ class TestAdminListingQueue:
         ids = [item["id"] for item in resp.data["results"]]
         assert approved_listing.pk not in ids
 
+    def test_viewed_by_me_reflects_admin_view_state(self, admin_client, pending_listing):
+        resp = admin_client.get("/api/v1/admin/listings/")
+        item = next(i for i in resp.data["results"] if i["id"] == pending_listing.pk)
+        assert item["viewed_by_me"] is False
+
+        admin_client.get(f"/api/v1/listings/{pending_listing.pk}")
+
+        resp = admin_client.get("/api/v1/admin/listings/")
+        item = next(i for i in resp.data["results"] if i["id"] == pending_listing.pk)
+        assert item["viewed_by_me"] is True
+
 
 @pytest.mark.django_db
 class TestAdminListingDecision:
+    def test_decision_without_viewing_is_rejected(self, admin_client, pending_listing):
+        resp = admin_client.post(
+            f"/api/v1/admin/listings/{pending_listing.pk}/decision",
+            {"decision": "approved", "notes": ""},
+            format="json",
+        )
+        assert resp.status_code == 400
+        assert resp.data["code"] == "not_viewed"
+        pending_listing.refresh_from_db()
+        assert pending_listing.status == "pending"
+
     def test_approve_listing(self, admin_client, admin_user, pending_listing):
+        admin_client.get(f"/api/v1/listings/{pending_listing.pk}")
         resp = admin_client.post(
             f"/api/v1/admin/listings/{pending_listing.pk}/decision",
             {"decision": "approved", "notes": ""},
@@ -99,6 +122,7 @@ class TestAdminListingDecision:
         assert pending_listing.status == "approved"
 
     def test_reject_listing_with_notes(self, admin_client, pending_listing):
+        admin_client.get(f"/api/v1/listings/{pending_listing.pk}")
         resp = admin_client.post(
             f"/api/v1/admin/listings/{pending_listing.pk}/decision",
             {"decision": "rejected", "notes": "Photos missing"},
@@ -108,6 +132,11 @@ class TestAdminListingDecision:
         pending_listing.refresh_from_db()
         assert pending_listing.status == "rejected"
         assert pending_listing.rejection_notes == "Photos missing"
+
+    def test_viewing_as_admin_does_not_pollute_recommender_interactions(self, admin_client, admin_user, pending_listing):
+        from apps.listings.models import UserInteraction
+        admin_client.get(f"/api/v1/listings/{pending_listing.pk}")
+        assert not UserInteraction.objects.filter(user=admin_user, listing=pending_listing).exists()
 
     def test_decision_not_found(self, admin_client):
         resp = admin_client.post(
@@ -132,6 +161,40 @@ class TestAdminListingDecision:
             format="json",
         )
         assert resp.status_code == 400
+
+
+@pytest.mark.django_db
+class TestAdminListingDelete:
+    def test_delete_without_viewing_is_rejected(self, admin_client, approved_listing):
+        resp = admin_client.delete(f"/api/v1/admin/listings/{approved_listing.pk}")
+        assert resp.status_code == 400
+        assert resp.data["code"] == "not_viewed"
+        approved_listing.refresh_from_db()
+        assert approved_listing.status == "approved"
+
+    def test_delete_archives_approved_listing(self, admin_client, approved_listing):
+        admin_client.get(f"/api/v1/listings/{approved_listing.pk}")
+        resp = admin_client.delete(f"/api/v1/admin/listings/{approved_listing.pk}")
+        assert resp.status_code == 204
+        approved_listing.refresh_from_db()
+        assert approved_listing.status == "archived"
+
+    def test_delete_logs_action(self, admin_client, admin_user, approved_listing):
+        from apps.common.models import AdminActionLog
+        admin_client.get(f"/api/v1/listings/{approved_listing.pk}")
+        admin_client.delete(f"/api/v1/admin/listings/{approved_listing.pk}")
+        entry = AdminActionLog.objects.latest("created_at")
+        assert entry.action == AdminActionLog.ACTION_DELETE_LISTING
+        assert entry.admin_id == admin_user.id
+        assert entry.target_listing_id == approved_listing.id
+
+    def test_delete_not_found(self, admin_client):
+        resp = admin_client.delete("/api/v1/admin/listings/99999")
+        assert resp.status_code == 404
+
+    def test_non_admin_cannot_delete(self, landlord_client, approved_listing):
+        resp = landlord_client.delete(f"/api/v1/admin/listings/{approved_listing.pk}")
+        assert resp.status_code == 403
 
 
 @pytest.mark.django_db

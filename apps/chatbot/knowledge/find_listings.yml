@@ -1,0 +1,44 @@
+intent: find_listings
+examples:
+  - "show me apartments in Aberdeen"
+  - "any houses in Lumley?"
+  - "what's available at Hill Station"
+  - "find property in Goderich"
+  - "listings in Wilberforce"
+  - "rent a room in Brookfields"
+  - "show me properties in Kissy"
+  - "what's for rent in Wellington"
+  - "houses in Murray Town"
+  - "available in Calaba Town"
+  - "show me listings"
+  - "what properties do you have"
+  - "2 bedroom apartments"
+  - "3 bed houses"
+  - "rooms with 1 bedroom"
+  - "apartments under 15000000"
+  - "houses under 20,000,000"
+  - "studios below 8000000"
+  - "2 bedroom apartments in Aberdeen under 12000000"
+  - "cheap houses in Lumley"
+  - "commercial property for rent"
+  - "what studios are available"
+  - "show me 3 bedroom houses in Hill Station"
+slots:
+  - name: area
+    type: enum
+    values: [aberdeen, lumley, goderich, hill_station, wilberforce, murray_town, brookfields, kissy, wellington, calaba_town]
+  - name: property_type
+    type: enum
+    values: [apartment, house, studio, room, commercial]
+  - name: bedrooms
+    type: number_near_keyword
+    keywords: [bedroom, bedrooms, bed, beds]
+  - name: max_price
+    type: price_ceiling
+    keywords: [under, below, less than, max, up to]
+responses:
+  - "Here are listings matching what you're looking for."
+followups:
+  - "2 bedroom apartments under 15,000"
+  - "Show me houses in Aberdeen"
+  - "What areas are available?"

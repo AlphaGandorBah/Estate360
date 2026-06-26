@@ -1,0 +1,16 @@
+intent: restricted_or_banned_help
+examples:
+  - "why was I banned"
+  - "my account is restricted"
+  - "why can't I post a listing"
+  - "why can't I send messages anymore"
+  - "I think I was wrongly banned"
+  - "my account got suspended"
+  - "what does restricted mean"
+  - "how do I appeal a ban"
+  - "why is my account limited"
+responses:
+  - "A 'restricted' account can still log in and browse, but is blocked from creating listings or sending any messages (including to support) — usually applied after a fraud report. A 'banned' account can't log in at all. Both are applied by an admin after a review; there's no in-app appeal yet, but restricted and banned accounts are periodically reassessed."
+followups:
+  - "How do I report a listing?"
+  - "Is messaging free?"

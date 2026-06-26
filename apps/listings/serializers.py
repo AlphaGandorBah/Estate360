@@ -90,9 +90,16 @@ class ListingReadSerializer(serializers.ModelSerializer):
 
 class ListingAdminSerializer(ListingReadSerializer):
     rejection_notes = serializers.CharField(allow_blank=True, default="")
+    viewed_by_me = serializers.SerializerMethodField()
 
     class Meta(ListingReadSerializer.Meta):
-        fields = ListingReadSerializer.Meta.fields + ["rejection_notes"]
+        fields = ListingReadSerializer.Meta.fields + ["rejection_notes", "viewed_by_me"]
+
+    def get_viewed_by_me(self, obj) -> bool:
+        request = self.context.get("request")
+        if not request or not request.user.is_authenticated:
+            return False
+        return obj.admin_views.filter(admin=request.user).exists()
 
 
 class ListingDecisionSerializer(serializers.Serializer):

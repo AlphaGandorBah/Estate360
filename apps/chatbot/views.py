@@ -20,6 +20,21 @@ class ChatbotQueryView(APIView):
                 status=400,
             )
 
-        from .retriever import get_retriever
+        from . import llm
+        from .retriever import build_knowledge_text, get_retriever
+
+        history = [
+            {"role": turn["role"], "content": turn["content"][:2000]}
+            for turn in request.data.get("history", []) or []
+            if isinstance(turn, dict)
+            and turn.get("role") in ("user", "assistant")
+            and isinstance(turn.get("content"), str)
+            and turn["content"].strip()
+        ]
+
         result = get_retriever().query(message)
+        generated = llm.generate_reply(message, build_knowledge_text(), result["listing_query"], history)
+        if generated:
+            result = {**result, "reply": generated}
+
         return Response(result)

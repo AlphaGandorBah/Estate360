@@ -1,8 +1,11 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { adminApi } from '@/api'
 import { formatPrice } from '@/lib/intl'
+import { getErrorMessage } from '@/lib/utils'
+import { pushToast } from '@/lib/toast'
+import Avatar from '@/components/common/Avatar'
 import type { ListingStatus } from '@/types'
 
 type FilterStatus = 'pending' | 'approved' | 'rejected' | 'archived'
@@ -19,9 +22,20 @@ export default function AdminListingsPage() {
     queryFn: () => adminApi.listings({ status, page }).then((r) => r.data),
   })
 
+  // The "view it first" gate is opened by visiting the listing in a new tab
+  // (see the link below). refetchOnWindowFocus is off app-wide, so without
+  // this the queue would keep showing the buttons disabled after the admin
+  // comes back, even though the view just registered server-side.
+  useEffect(() => {
+    const onFocus = () => qc.invalidateQueries({ queryKey: ['admin-listings'] })
+    window.addEventListener('focus', onFocus)
+    return () => window.removeEventListener('focus', onFocus)
+  }, [qc])
+
   const approveMut = useMutation({
     mutationFn: (id: number) => adminApi.approveListing(id),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['admin-listings'] }),
+    onError: (err) => pushToast(getErrorMessage(err, 'Failed to approve listing'), 'error'),
   })
 
   const rejectMut = useMutation({
@@ -31,6 +45,13 @@ export default function AdminListingsPage() {
       setRejectId(null)
       setRejectNote('')
     },
+    onError: (err) => pushToast(getErrorMessage(err, 'Failed to reject listing'), 'error'),
+  })
+
+  const deleteMut = useMutation({
+    mutationFn: (id: number) => adminApi.deleteListing(id),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['admin-listings'] }),
+    onError: (err) => pushToast(getErrorMessage(err, 'Failed to delete listing'), 'error'),
   })
 
   const STATUS_TABS: FilterStatus[] = ['pending', 'approved', 'rejected', 'archived']
@@ -70,6 +91,7 @@ export default function AdminListingsPage() {
       <div className="mt-4 space-y-2">
         {data?.results.map((l) => (
           <div key={l.id} className="flex items-center gap-4 rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800">
+            <Avatar name={l.owner_name} />
             <div className="flex-1 min-w-0">
               <Link to={`/listings/${l.id}`}
                 className="font-medium text-gray-900 hover:text-emerald-600 truncate block dark:text-gray-100 dark:hover:text-emerald-400">
@@ -85,18 +107,37 @@ export default function AdminListingsPage() {
             <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${statusColor(l.status)}`}>
               {l.status}
             </span>
-            {status === 'pending' && (
-              <div className="flex shrink-0 gap-2">
-                <button onClick={() => approveMut.mutate(l.id)}
-                  disabled={approveMut.isPending}
-                  className="rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-50">
-                  Approve
-                </button>
-                <button onClick={() => setRejectId(l.id)}
-                  className="rounded-lg border border-red-300 px-3 py-1.5 text-xs font-semibold text-red-600 hover:bg-red-50 dark:border-red-800 dark:text-red-400 dark:hover:bg-red-900/30">
-                  Reject
-                </button>
-              </div>
+            {(status === 'pending' || l.status !== 'archived') && (
+              l.viewed_by_me ? (
+                <div className="flex shrink-0 gap-2">
+                  {status === 'pending' && (
+                    <>
+                      <button onClick={() => approveMut.mutate(l.id)}
+                        disabled={approveMut.isPending}
+                        className="rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-50">
+                        Approve
+                      </button>
+                      <button onClick={() => setRejectId(l.id)}
+                        className="rounded-lg border border-red-300 px-3 py-1.5 text-xs font-semibold text-red-600 hover:bg-red-50 dark:border-red-800 dark:text-red-400 dark:hover:bg-red-900/30">
+                        Reject
+                      </button>
+                    </>
+                  )}
+                  {l.status !== 'archived' && (
+                    <button
+                      onClick={() => { if (confirm(`Delete "${l.title}"? This removes it from public view and cannot be undone from here.`)) deleteMut.mutate(l.id) }}
+                      disabled={deleteMut.isPending}
+                      className="rounded-lg bg-red-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-red-700 disabled:opacity-50">
+                      Delete
+                    </button>
+                  )}
+                </div>
+              ) : (
+                <Link to={`/listings/${l.id}`} target="_blank" rel="noopener noreferrer"
+                  className="shrink-0 rounded-lg border border-gray-300 px-3 py-1.5 text-xs font-semibold text-gray-600 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700">
+                  View property to review
+                </Link>
+              )
             )}
           </div>
         ))}

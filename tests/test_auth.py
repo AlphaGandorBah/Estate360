@@ -1,5 +1,6 @@
 """Tests for authentication endpoints."""
 import pytest
+from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.urls import reverse
 
@@ -58,6 +59,60 @@ class TestLogin:
     def test_login_unknown_email(self, api_client):
         resp = api_client.post(self.url, {"email": "nobody@x.com", "password": "pass"}, format="json")
         assert resp.status_code == 401
+
+    def test_login_response_includes_is_restricted(self, api_client, tenant_user):
+        resp = api_client.post(self.url, {"email": tenant_user.email, "password": "TestPass@123"}, format="json")
+        assert resp.status_code == 200
+        assert resp.data["user"]["is_restricted"] is False
+
+    def test_banned_account_gets_distinct_error(self, api_client, tenant_user):
+        tenant_user.is_active = False
+        tenant_user.save(update_fields=["is_active"])
+        resp = api_client.post(self.url, {"email": tenant_user.email, "password": "TestPass@123"}, format="json")
+        assert resp.status_code == 403
+        assert resp.data["code"] == "account_banned"
+
+    def test_banned_account_with_wrong_password_still_looks_like_wrong_password(self, api_client, tenant_user):
+        tenant_user.is_active = False
+        tenant_user.save(update_fields=["is_active"])
+        resp = api_client.post(self.url, {"email": tenant_user.email, "password": "wrong"}, format="json")
+        assert resp.status_code == 401
+        assert resp.data["code"] == "invalid_credentials"
+
+    def test_restricted_but_not_banned_logs_in_normally(self, api_client, tenant_user):
+        tenant_user.is_restricted = True
+        tenant_user.save(update_fields=["is_restricted"])
+        resp = api_client.post(self.url, {"email": tenant_user.email, "password": "TestPass@123"}, format="json")
+        assert resp.status_code == 200
+        assert resp.data["user"]["is_restricted"] is True
+
+
+@pytest.mark.django_db
+class TestRefresh:
+    url = "/api/v1/auth/refresh"
+    headers = {"HTTP_X_REQUESTED_WITH": "estate360-web"}
+
+    def _login_and_get_cookie(self, api_client, user):
+        resp = api_client.post(
+            "/api/v1/auth/login", {"email": user.email, "password": "TestPass@123"}, format="json"
+        )
+        return resp.cookies[settings.JWT_REFRESH_COOKIE_NAME].value
+
+    def test_refresh_succeeds_for_active_user(self, api_client, tenant_user):
+        cookie = self._login_and_get_cookie(api_client, tenant_user)
+        api_client.cookies[settings.JWT_REFRESH_COOKIE_NAME] = cookie
+        resp = api_client.post(self.url, **self.headers)
+        assert resp.status_code == 200
+        assert "access" in resp.data
+
+    def test_refresh_rejected_for_banned_user(self, api_client, tenant_user):
+        cookie = self._login_and_get_cookie(api_client, tenant_user)
+        tenant_user.is_active = False
+        tenant_user.save(update_fields=["is_active"])
+        api_client.cookies[settings.JWT_REFRESH_COOKIE_NAME] = cookie
+        resp = api_client.post(self.url, **self.headers)
+        assert resp.status_code == 403
+        assert resp.data["code"] == "account_banned"
 
 
 @pytest.mark.django_db

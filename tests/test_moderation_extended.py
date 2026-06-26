@@ -156,3 +156,97 @@ class TestAdminReportDecision:
             format="json",
         )
         assert resp.status_code == 400
+
+    def test_remove_listing_action_archives_listing(self, admin_client, admin_user, open_report, approved_listing):
+        from apps.common.models import AdminActionLog
+        resp = admin_client.post(
+            f"/api/v1/admin/reports/{open_report.pk}/resolve",
+            {"decision": "resolved", "action": "remove_listing", "notes": "Confirmed fake."},
+            format="json",
+        )
+        assert resp.status_code == 200
+        approved_listing.refresh_from_db()
+        assert approved_listing.status == "archived"
+
+        entry = AdminActionLog.objects.latest("created_at")
+        assert entry.action == AdminActionLog.ACTION_DELETE_LISTING
+        assert entry.admin_id == admin_user.id
+        assert entry.target_listing_id == approved_listing.id
+
+    def test_remove_listing_action_without_listing_rejected(self, admin_client, tenant_user, verified_landlord):
+        from apps.moderation.models import FraudReport
+        report = FraudReport.objects.create(
+            reporter=tenant_user, reported_user=verified_landlord,
+            reason="scam", description="Scammed me in chat.",
+        )
+        resp = admin_client.post(
+            f"/api/v1/admin/reports/{report.pk}/resolve",
+            {"decision": "resolved", "action": "remove_listing"},
+            format="json",
+        )
+        assert resp.status_code == 400
+        assert resp.data["code"] == "no_listing"
+
+    def test_warn_action_notifies_reported_user(self, admin_client, admin_user, tenant_user, verified_landlord):
+        from apps.moderation.models import FraudReport
+        from apps.notifications.models import Notification
+        from apps.common.models import AdminActionLog
+        report = FraudReport.objects.create(
+            reporter=tenant_user, reported_user=verified_landlord,
+            reason="scam", description="Scammed me in chat.",
+        )
+        resp = admin_client.post(
+            f"/api/v1/admin/reports/{report.pk}/resolve",
+            {"decision": "resolved", "action": "warn", "notes": "Be careful next time."},
+            format="json",
+        )
+        assert resp.status_code == 200
+        notif = Notification.objects.filter(user=verified_landlord, type=Notification.TYPE_MODERATION_WARNING).latest("created_at")
+        assert "Be careful" in notif.payload["message"]
+
+        entry = AdminActionLog.objects.latest("created_at")
+        assert entry.action == AdminActionLog.ACTION_WARN_USER
+        assert entry.target_user_id == verified_landlord.id
+
+    def test_warn_action_falls_back_to_listing_owner(self, admin_client, open_report, verified_landlord):
+        from apps.notifications.models import Notification
+        resp = admin_client.post(
+            f"/api/v1/admin/reports/{open_report.pk}/resolve",
+            {"decision": "resolved", "action": "warn"},
+            format="json",
+        )
+        assert resp.status_code == 200
+        assert Notification.objects.filter(user=verified_landlord, type=Notification.TYPE_MODERATION_WARNING).exists()
+
+    def test_warn_action_without_target_rejected(self, admin_client, tenant_user):
+        from apps.moderation.models import FraudReport
+        report = FraudReport.objects.create(
+            reporter=tenant_user, reason="other", description="General concern, no specific target.",
+        )
+        resp = admin_client.post(
+            f"/api/v1/admin/reports/{report.pk}/resolve",
+            {"decision": "resolved", "action": "warn"},
+            format="json",
+        )
+        assert resp.status_code == 400
+        assert resp.data["code"] == "no_target"
+
+
+@pytest.mark.django_db
+class TestAdminReportListStatusFilter:
+    def test_resolved_tab(self, admin_client, open_report):
+        from apps.moderation.models import FraudReport
+        open_report.status = FraudReport.STATUS_RESOLVED
+        open_report.save()
+        resp = admin_client.get("/api/v1/admin/reports/?status=resolved")
+        ids = [r["id"] for r in resp.data["results"]]
+        assert open_report.pk in ids
+
+    def test_dismissed_tab_excludes_open(self, admin_client, open_report):
+        resp = admin_client.get("/api/v1/admin/reports/?status=dismissed")
+        ids = [r["id"] for r in resp.data["results"]]
+        assert open_report.pk not in ids
+
+    def test_invalid_status_rejected(self, admin_client):
+        resp = admin_client.get("/api/v1/admin/reports/?status=bogus")
+        assert resp.status_code == 400

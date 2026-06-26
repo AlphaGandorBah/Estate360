@@ -1,0 +1,14 @@
+intent: recommendations_info
+examples:
+  - "how do recommendations work"
+  - "why am I seeing these listings"
+  - "personalized recommendations"
+  - "how does estate360 recommend listings"
+  - "what are recommended listings based on"
+  - "can I change my recommendations"
+  - "recommended for you section"
+responses:
+  - "Your 'Recommended for you' listings are based on your saved listings, search preferences, and recent activity. Save a few properties you like or set your preferences (area, price range, bedrooms) to get more relevant suggestions."
+followups:
+  - "How do I save a listing?"
+  - "How do I set my search preferences?"

@@ -40,6 +40,18 @@ scikit-learn==1.5.2
 numpy==2.1.3
 scipy==1.14.1
 
+# Chatbot LLM (local, free — no API key/cost). PyPI only hosts the sdist,
+# which fails to build on Windows (vendored llama.cpp web UI trips the
+# MAX_PATH limit) — the project's own prebuilt CPU wheels avoid that.
+# Pinned to 0.3.19, not latest: newer releases only ship one universal
+# "py3-none-win_amd64" Windows wheel, compiled with CPU instructions
+# (beyond AVX2) that crash with STATUS_ILLEGAL_INSTRUCTION on older CPUs
+# (confirmed on an i7-6700HQ/Skylake). 0.3.19 is the last version with a
+# per-Python-version Windows wheel built to a more conservative baseline.
+--extra-index-url https://abetlen.github.io/llama-cpp-python/whl/cpu
+llama-cpp-python==0.3.19
+huggingface_hub==1.20.1
+
 # Logging
 structlog==24.4.0
 colorama==0.4.6

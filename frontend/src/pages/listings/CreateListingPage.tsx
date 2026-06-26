@@ -99,6 +99,11 @@ export default function CreateListingPage() {
             lng={lng ?? null}
             onChange={(newLat, newLng) => { setValue('lat', newLat); setValue('lng', newLng) }}
           />
+          {(errors.lat || errors.lng) && (
+            <p className="mt-1 text-xs text-red-600 dark:text-red-400">
+              {errors.lat?.message || errors.lng?.message}
+            </p>
+          )}
         </div>
 
         <button type="submit" disabled={isSubmitting}

@@ -1,10 +1,22 @@
 """Shared pytest fixtures."""
 import pytest
 from django.contrib.auth import get_user_model
+from django.core.cache import cache
 from rest_framework.test import APIClient
 from rest_framework_simplejwt.tokens import RefreshToken
 
 User = get_user_model()
+
+
+@pytest.fixture(autouse=True)
+def _clear_cache():
+    """DRF's ScopedRateThrottle counters live in the LocMemCache, which
+    persists across the whole test session (DB rollback doesn't touch it).
+    Without this, auth-throttled tests start tripping 429s once enough other
+    tests have hit the same scope earlier in the run."""
+    cache.clear()
+    yield
+    cache.clear()
 
 
 @pytest.fixture
@@ -48,24 +60,27 @@ def admin_user(db):
 
 
 @pytest.fixture
-def tenant_client(api_client, tenant_user):
+def tenant_client(tenant_user):
+    client = APIClient()
     refresh = RefreshToken.for_user(tenant_user)
-    api_client.credentials(HTTP_AUTHORIZATION=f"Bearer {str(refresh.access_token)}")
-    return api_client
+    client.credentials(HTTP_AUTHORIZATION=f"Bearer {str(refresh.access_token)}")
+    return client
 
 
 @pytest.fixture
-def landlord_client(api_client, verified_landlord):
+def landlord_client(verified_landlord):
+    client = APIClient()
     refresh = RefreshToken.for_user(verified_landlord)
-    api_client.credentials(HTTP_AUTHORIZATION=f"Bearer {str(refresh.access_token)}")
-    return api_client
+    client.credentials(HTTP_AUTHORIZATION=f"Bearer {str(refresh.access_token)}")
+    return client
 
 
 @pytest.fixture
-def admin_client(api_client, admin_user):
+def admin_client(admin_user):
+    client = APIClient()
     refresh = RefreshToken.for_user(admin_user)
-    api_client.credentials(HTTP_AUTHORIZATION=f"Bearer {str(refresh.access_token)}")
-    return api_client
+    client.credentials(HTTP_AUTHORIZATION=f"Bearer {str(refresh.access_token)}")
+    return client
 
 
 @pytest.fixture

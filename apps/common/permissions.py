@@ -39,4 +39,8 @@ class IsOwnerOrReadOnly(BasePermission):
 
 class IsConversationParticipant(IsAuthenticated):
     def has_object_permission(self, request, view, obj):
-        return request.user in (obj.tenant, obj.landlord)
+        # Support conversations are a shared inbox: any admin counts as a
+        # participant, not just whichever admin happens to reply first.
+        if obj.is_support and request.user.role == User.ROLE_ADMIN:
+            return True
+        return request.user in (obj.initiator, obj.landlord)

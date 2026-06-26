@@ -1,10 +1,13 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { v4 as uuid } from 'uuid'
 import { messagingApi } from '@/api'
 import { useAuthStore } from '@/lib/auth'
 import { formatRelative } from '@/lib/intl'
+import { pushToast } from '@/lib/toast'
 import { useWebSocket } from '@/lib/ws'
+import Avatar from '@/components/common/Avatar'
 import type { Message } from '@/types'
 
 export default function ConversationDetailPage() {
@@ -37,9 +40,30 @@ export default function ConversationDetailPage() {
   }, [localMsgs])
 
   const onMessage = useCallback((data: Record<string, unknown>) => {
-    if (data.type === 'chat_message') {
-      setLocalMsgs((prev) => [...prev, data.message as Message])
+    if (data.type === 'message.new') {
+      const msg: Message = {
+        id: data.id as number,
+        sender_id: data.sender_id as string,
+        sender_name: '',
+        body: data.body as string,
+        client_key: (data.client_key as string | null) ?? null,
+        read_at: null,
+        created_at: data.created_at as string,
+      }
+      setLocalMsgs((prev) => {
+        // Reconcile with the optimistic message we already rendered on send,
+        // matched by client_key, instead of appending a duplicate.
+        const idx = msg.client_key ? prev.findIndex((m) => m.client_key === msg.client_key) : -1
+        if (idx !== -1) {
+          const next = [...prev]
+          next[idx] = msg
+          return next
+        }
+        return [...prev, msg]
+      })
       qc.invalidateQueries({ queryKey: ['conversations'] })
+    } else if (data.type === 'error') {
+      pushToast((data.detail as string) ?? 'Something went wrong.', 'error')
     }
   }, [qc])
 
@@ -48,22 +72,44 @@ export default function ConversationDetailPage() {
   const handleSend = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!text.trim()) return
-    const msg = text
+    const body = text
+    const clientKey = uuid()
     setText('')
-    await messagingApi.sendMessage(convId, { body: msg })
+
+    // Show the message immediately rather than waiting on the WS echo —
+    // reconciled against the real row (same client_key) once it arrives.
+    setLocalMsgs((prev) => [...prev, {
+      id: -Date.now(),
+      sender_id: user?.id ?? '',
+      sender_name: '',
+      body,
+      client_key: clientKey,
+      read_at: null,
+      created_at: new Date().toISOString(),
+    }])
+
+    try {
+      await messagingApi.sendMessage(convId, { body, client_key: clientKey })
+    } catch {
+      // apiClient's interceptor already toasts the server's error message
+      // (e.g. a restriction 403) — drop the optimistic bubble and give the
+      // user their draft back.
+      setLocalMsgs((prev) => prev.filter((m) => m.client_key !== clientKey))
+      setText(body)
+    }
   }
 
-  const otherName = conv
-    ? (user?.role === 'landlord' ? conv.tenant_name : conv.landlord_name)
-    : '…'
+  const otherName = (conv
+    ? (conv.is_support
+        ? (user?.role === 'admin' ? conv.initiator_name : 'Admin Support')
+        : (user?.id === conv.initiator_id ? conv.landlord_name : conv.initiator_name))
+    : '…') ?? '…'
 
   return (
     <div className="flex h-[calc(100vh-120px)] flex-col rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800">
       {/* Header */}
       <div className="flex items-center gap-3 border-b border-gray-200 px-5 py-4 dark:border-gray-700">
-        <div className="flex h-9 w-9 items-center justify-center rounded-full bg-emerald-100 text-sm font-semibold text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400">
-          {otherName[0] ?? '?'}
-        </div>
+        <Avatar name={otherName} size="sm" />
         <div>
           <div className="font-medium text-gray-900 dark:text-gray-100">{otherName}</div>
           {conv?.listing_id && (

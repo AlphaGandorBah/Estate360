@@ -1,0 +1,17 @@
+intent: contact_support
+examples:
+  - "can I talk to a human"
+  - "I need help from a real person"
+  - "contact support"
+  - "talk to admin"
+  - "customer service"
+  - "open a support ticket"
+  - "is there a human I can talk to"
+  - "this bot isn't helping, who can I talk to"
+  - "how do I reach Estate360 support"
+  - "how do I escalate an issue"
+responses:
+  - "Head to the Messages section and click 'Contact Support' — it opens a conversation with our admin team, who'll reply there directly. It's the fastest way to reach an actual person."
+followups:
+  - "How do I report a listing?"
+  - "Why is my account restricted?"

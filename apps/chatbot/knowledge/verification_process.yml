@@ -10,6 +10,8 @@ examples:
   - "what documents do I need"
   - "how long does verification take"
   - "is verification required to list"
+  - "why do I need to be verified"
+  - "what's a verified badge"
 responses:
   - "Landlord verification requires uploading a government-issued ID (National ID, Driver's License, or Passport) and a selfie. Our team reviews submissions within 1-2 business days. Verification is required before you can publish listings."
 followups:

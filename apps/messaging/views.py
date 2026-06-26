@@ -21,6 +21,7 @@ from .serializers import (
     SendMessageSerializer,
     StartConversationSerializer,
 )
+from .utils import notify_new_message
 
 logger = structlog.get_logger(__name__)
 
@@ -37,14 +38,16 @@ class ConversationListView(IdempotencyMixin, APIView):
 
     def get(self, request: Request) -> Response:
         user = request.user
-        if user.role == User.ROLE_TENANT:
-            qs = Conversation.objects.filter(tenant=user)
+        if user.role == User.ROLE_ADMIN:
+            qs = Conversation.objects.filter(is_support=True)
         elif user.role == User.ROLE_LANDLORD:
-            qs = Conversation.objects.filter(landlord=user)
+            qs = Conversation.objects.filter(landlord=user) | Conversation.objects.filter(
+                initiator=user, is_support=True
+            )
         else:
-            qs = Conversation.objects.filter(tenant=user) | Conversation.objects.filter(landlord=user)
+            qs = Conversation.objects.filter(initiator=user)
 
-        qs = qs.select_related("tenant", "landlord", "listing").order_by("-last_message_at")
+        qs = qs.select_related("initiator", "landlord", "listing").order_by("-last_message_at")
         paginator = StandardPagination()
         page = paginator.paginate_queryset(qs, request)
         return paginator.get_paginated_response(
@@ -52,9 +55,15 @@ class ConversationListView(IdempotencyMixin, APIView):
         )
 
     def post(self, request: Request) -> Response:
-        if request.user.role != User.ROLE_TENANT:
+        user = request.user
+        if user.role == User.ROLE_ADMIN:
             return Response(
-                {"code": "forbidden", "detail": "Only tenants can start conversations."},
+                {"code": "forbidden", "detail": "Admins can reply to support conversations but can't start new ones."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+        if user.is_restricted:
+            return Response(
+                {"code": "restricted", "detail": "Your account is restricted from messaging."},
                 status=status.HTTP_403_FORBIDDEN,
             )
 
@@ -65,37 +74,57 @@ class ConversationListView(IdempotencyMixin, APIView):
         serializer = StartConversationSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        landlord_id = serializer.validated_data["landlord_id"]
-        listing_id = serializer.validated_data.get("listing_id")
         initial_message = serializer.validated_data.get("initial_message", "")
 
-        try:
-            landlord = User.objects.get(pk=landlord_id, role=User.ROLE_LANDLORD, is_active=True)
-        except User.DoesNotExist:
-            return Response({"code": "not_found", "detail": "Landlord not found."}, status=status.HTTP_404_NOT_FOUND)
+        if serializer.validated_data.get("support"):
+            conv, created = Conversation.objects.get_or_create(initiator=user, is_support=True)
+            listing = None
+        else:
+            if user.role != User.ROLE_TENANT:
+                return Response(
+                    {"code": "forbidden", "detail": "Only tenants can start conversations with a landlord."},
+                    status=status.HTTP_403_FORBIDDEN,
+                )
 
-        listing = None
-        if listing_id:
-            from apps.listings.models import Listing
+            landlord_id = serializer.validated_data.get("landlord_id")
+            if not landlord_id:
+                return Response(
+                    {"code": "invalid", "detail": "landlord_id is required."}, status=status.HTTP_400_BAD_REQUEST
+                )
+            listing_id = serializer.validated_data.get("listing_id")
+
             try:
-                listing = Listing.objects.get(pk=listing_id)
-            except Listing.DoesNotExist:
-                return Response({"code": "not_found", "detail": "Listing not found."}, status=status.HTTP_404_NOT_FOUND)
+                landlord = User.objects.get(pk=landlord_id, role=User.ROLE_LANDLORD, is_active=True)
+            except User.DoesNotExist:
+                return Response(
+                    {"code": "not_found", "detail": "Landlord not found."}, status=status.HTTP_404_NOT_FOUND
+                )
 
-        conv, created = Conversation.objects.get_or_create(
-            tenant=request.user, landlord=landlord, listing=listing
-        )
+            listing = None
+            if listing_id:
+                from apps.listings.models import Listing
+                try:
+                    listing = Listing.objects.get(pk=listing_id)
+                except Listing.DoesNotExist:
+                    return Response(
+                        {"code": "not_found", "detail": "Listing not found."}, status=status.HTTP_404_NOT_FOUND
+                    )
+
+            conv, created = Conversation.objects.get_or_create(
+                initiator=user, landlord=landlord, listing=listing
+            )
 
         if created and initial_message:
             Message.objects.create(
-                conversation=conv, sender=request.user, body=initial_message
+                conversation=conv, sender=user, body=initial_message
             )
             conv.last_message_at = timezone.now()
             conv.save(update_fields=["last_message_at"])
+            notify_new_message(conv, user)
 
             if listing:
                 UserInteraction.objects.create(
-                    user=request.user, listing=listing, event_type=UserInteraction.EVENT_INQUIRY
+                    user=user, listing=listing, event_type=UserInteraction.EVENT_INQUIRY
                 )
 
         response = Response(
@@ -104,6 +133,21 @@ class ConversationListView(IdempotencyMixin, APIView):
         )
         self.finalize_idempotency(request, response)
         return response
+
+
+class ConversationDetailView(APIView):
+    """GET /conversations/{id}"""
+
+    permission_classes = [IsAuthenticated, IsConversationParticipant]
+    throttle_classes = [ReadThrottle]
+
+    def get(self, request: Request, pk: int) -> Response:
+        try:
+            conv = Conversation.objects.select_related("initiator", "landlord", "listing").get(pk=pk)
+        except Conversation.DoesNotExist:
+            return Response({"code": "not_found", "detail": "Not found."}, status=status.HTTP_404_NOT_FOUND)
+        self.check_object_permissions(request, conv)
+        return Response(ConversationSerializer(conv, context={"request": request}).data)
 
 
 class MessageView(IdempotencyMixin, APIView):
@@ -139,6 +183,11 @@ class MessageView(IdempotencyMixin, APIView):
         if not conv:
             return Response({"code": "not_found", "detail": "Not found."}, status=status.HTTP_404_NOT_FOUND)
         self.check_object_permissions(request, conv)
+        if request.user.is_restricted:
+            return Response(
+                {"code": "restricted", "detail": "Your account is restricted from messaging."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
 
         short_circuit = self.enforce_idempotency(request)
         if short_circuit is not None:
@@ -164,25 +213,32 @@ class MessageView(IdempotencyMixin, APIView):
         conv.last_message_at = timezone.now()
         conv.save(update_fields=["last_message_at"])
 
-        # Push over channel layer
+        # Push over channel layer — best-effort: the message is already
+        # persisted, so a channel-layer hiccup (e.g. Redis unreachable)
+        # should degrade to "recipient needs to refresh," not fail the send.
         from asgiref.sync import async_to_sync
         from channels.layers import get_channel_layer
         channel_layer = get_channel_layer()
         if channel_layer:
-            async_to_sync(channel_layer.group_send)(
-                f"conversation_{pk}",
-                {
-                    "type": "chat_message",
-                    "payload": {
-                        "type": "message.new",
-                        "id": msg.id,
-                        "sender_id": str(request.user.id),
-                        "body": msg.body,
-                        "created_at": msg.created_at.isoformat(),
-                        "client_key": str(msg.client_key) if msg.client_key else None,
+            try:
+                async_to_sync(channel_layer.group_send)(
+                    f"conversation_{pk}",
+                    {
+                        "type": "chat_message",
+                        "payload": {
+                            "type": "message.new",
+                            "id": msg.id,
+                            "sender_id": str(request.user.id),
+                            "body": msg.body,
+                            "created_at": msg.created_at.isoformat(),
+                            "client_key": str(msg.client_key) if msg.client_key else None,
+                        },
                     },
-                },
-            )
+                )
+            except Exception as exc:
+                logger.warning("ws_broadcast_failed", error=str(exc), conversation_id=pk)
+
+        notify_new_message(conv, request.user)
 
         response = Response(MessageSerializer(msg).data, status=status.HTTP_201_CREATED)
         self.finalize_idempotency(request, response)

@@ -123,8 +123,14 @@ class AdminVerificationListView(APIView):
     throttle_scope = "read"
 
     def get(self, request: Request) -> Response:
+        status_param = request.GET.get("status", LandlordVerification.STATUS_PENDING)
+        if status_param not in dict(LandlordVerification.STATUS_CHOICES):
+            return Response(
+                {"code": "invalid_status", "detail": f"status must be one of {[c[0] for c in LandlordVerification.STATUS_CHOICES]}"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
         qs = LandlordVerification.objects.filter(
-            status=LandlordVerification.STATUS_PENDING
+            status=status_param
         ).select_related("user").order_by("submitted_at")
         paginator = StandardPagination()
         page = paginator.paginate_queryset(qs, request)

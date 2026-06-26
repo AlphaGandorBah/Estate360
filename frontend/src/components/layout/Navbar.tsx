@@ -5,6 +5,7 @@ import { authApi } from '@/api'
 import { useIdempotencyKey } from '@/lib/idempotency'
 import NotificationBell from '@/components/notifications/NotificationBell'
 import ThemeToggle from '@/components/layout/ThemeToggle'
+import Avatar from '@/components/common/Avatar'
 
 const linkCls = 'text-sm font-medium text-gray-600 hover:text-emerald-600 dark:text-gray-300 dark:hover:text-emerald-400'
 const mobileLinkCls = 'block rounded-lg px-3 py-2.5 text-base font-medium text-gray-700 hover:bg-gray-50 dark:text-gray-200 dark:hover:bg-gray-800'
@@ -44,7 +45,7 @@ export default function Navbar() {
             </>
           )}
           {user?.role === 'admin' && (
-            <Link to="/dashboard" className={linkCls}>Admin</Link>
+            <Link to="/dashboard" className={linkCls}>Dashboard</Link>
           )}
           {user && (
             <>
@@ -59,7 +60,10 @@ export default function Navbar() {
           {user ? (
             <>
               <NotificationBell />
-              <span className="hidden text-sm text-gray-700 md:block dark:text-gray-300">{user.email}</span>
+              <Link to="/account" className="hidden items-center gap-2 md:flex">
+                <Avatar name={user.full_name || user.email} imageUrl={user.avatar_url} size="xs" />
+                <span className="text-sm text-gray-700 dark:text-gray-300">{user.email}</span>
+              </Link>
               <button
                 onClick={handleLogout}
                 className="hidden rounded-md bg-emerald-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-emerald-700 md:block"
@@ -114,14 +118,17 @@ export default function Navbar() {
             </>
           )}
           {user?.role === 'admin' && (
-            <Link to="/dashboard" onClick={closeMenu} className={mobileLinkCls}>Admin</Link>
+            <Link to="/dashboard" onClick={closeMenu} className={mobileLinkCls}>Dashboard</Link>
           )}
           {user && (
             <>
               <Link to="/conversations" onClick={closeMenu} className={mobileLinkCls}>Messages</Link>
               <Link to="/account" onClick={closeMenu} className={mobileLinkCls}>Account</Link>
               <div className="my-2 border-t border-gray-200 dark:border-gray-800" />
-              <div className="px-3 py-1 text-xs text-gray-500 dark:text-gray-400">{user.email}</div>
+              <div className="flex items-center gap-2 px-3 py-1">
+                <Avatar name={user.full_name || user.email} imageUrl={user.avatar_url} size="xs" />
+                <span className="text-xs text-gray-500 dark:text-gray-400">{user.email}</span>
+              </div>
               <button onClick={handleLogout} className={`${mobileLinkCls} w-full text-left text-red-600 dark:text-red-400`}>
                 Logout
               </button>

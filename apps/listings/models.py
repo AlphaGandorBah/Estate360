@@ -155,6 +155,24 @@ class UserInteraction(models.Model):
         return f"Interaction({self.user_id}, {self.event_type})"
 
 
+class ListingAdminView(models.Model):
+    """Tracks that an admin has opened a listing's detail page — required
+    before they're allowed to approve/reject it. Kept separate from
+    UserInteraction so moderation views never feed the tenant recommender."""
+
+    listing = models.ForeignKey(Listing, on_delete=models.CASCADE, related_name="admin_views")
+    admin = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="listing_admin_views"
+    )
+    viewed_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = [("listing", "admin")]
+
+    def __str__(self) -> str:
+        return f"ListingAdminView({self.listing_id}, {self.admin_id})"
+
+
 class SearchPreference(models.Model):
     tenant = models.OneToOneField(
         settings.AUTH_USER_MODEL,

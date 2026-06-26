@@ -4,7 +4,8 @@ from .models import Conversation, Message
 
 @admin.register(Conversation)
 class ConversationAdmin(admin.ModelAdmin):
-    list_display = ["id", "tenant", "landlord", "listing", "last_message_at"]
+    list_display = ["id", "initiator", "landlord", "is_support", "listing", "last_message_at"]
+    list_filter = ["is_support"]
 
 
 @admin.register(Message)

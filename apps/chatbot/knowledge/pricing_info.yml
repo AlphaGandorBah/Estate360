@@ -10,8 +10,10 @@ examples:
   - "is price per month or per year"
   - "what currency are listings in"
   - "do prices include utilities"
+  - "can I see prices in dollars"
+  - "is rent paid monthly or all at once"
 responses:
-  - "All prices on Estate360 are quoted annually, as is the standard in Freetown. Listings show prices in Sierra Leonean Leone (SLE) or US Dollars (USD). Utilities are not included unless specified by the landlord in the description."
+  - "All prices on Estate360 are quoted annually, as is the standard in Freetown. Listings show prices in Sierra Leonean Leone (SLE) or US Dollars (USD), depending on what the landlord set. Utilities are not included unless specified by the landlord in the description."
 followups:
-  - "How do I filter by price?"
-  - "Can I see listings in USD?"
+  - "2 bedroom apartments under 15,000"
+  - "Show me listings in Aberdeen"

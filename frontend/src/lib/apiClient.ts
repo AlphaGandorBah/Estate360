@@ -8,7 +8,7 @@ const IDEMPOTENT_URLS = [
   '/auth/register', '/auth/logout', '/auth/password-reset',
   '/auth/password-reset/confirm', '/listings/', '/submit',
   '/save', '/conversations/', '/messages', '/verification/',
-  '/decision', '/resolve', '/reports/',
+  '/decision', '/resolve', '/reports/', '/action',
 ]
 
 const apiClient = axios.create({
@@ -36,6 +36,29 @@ apiClient.interceptors.request.use((config) => {
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 
+// A page with several concurrent queries (notifications, conversations, etc.)
+// can have every one of them 401 around the same moment, each independently
+// retrying and failing — without this guard each would push its own toast
+// and redirect. Only the first one gets to react; the page is on its way to
+// /login by the time the rest reject anyway.
+let sessionEndHandled = false
+
+async function endSession(err: unknown, fallbackMessage: string) {
+  if (sessionEndHandled) return
+  sessionEndHandled = true
+  useAuthStore.getState().clearAuth()
+  // A plain expired session redirects silently — that's normal and expected.
+  // A ban is not, so give the user a reason before bouncing them, instead of
+  // leaving them to guess why they were suddenly logged out.
+  const code = (err as { response?: { data?: { code?: string } } })?.response?.data?.code
+  if (code === 'account_banned') {
+    const appError = toAppError(err, fallbackMessage)
+    pushToast(appError.detail, 'error', appError.requestId)
+    await sleep(1500)
+  }
+  window.location.href = '/login'
+}
+
 apiClient.interceptors.response.use(
   (res) => res,
   async (err) => {
@@ -57,9 +80,8 @@ apiClient.interceptors.response.use(
         useAuthStore.getState().setAccess(access)
         original.headers.Authorization = `Bearer ${access}`
         return apiClient(original)
-      } catch {
-        useAuthStore.getState().clearAuth()
-        window.location.href = '/login'
+      } catch (refreshErr) {
+        await endSession(refreshErr, 'Your account has been suspended.')
       }
       return Promise.reject(err)
     }
@@ -85,9 +107,20 @@ apiClient.interceptors.response.use(
     }
 
     if (status === 403) {
+      if (err.response?.data?.code === 'account_banned') {
+        await endSession(err, 'Your account has been suspended.')
+        return Promise.reject(err)
+      }
+
       const appError = toAppError(err, 'You do not have permission to do that.')
       pushToast(appError.detail, 'error', appError.requestId)
-      if (window.location.pathname !== '/') window.location.href = '/'
+      if (window.location.pathname !== '/') {
+        // window.location.href is a full page reload, which would wipe the
+        // toast we just pushed (it lives in an in-memory store) before the
+        // user ever sees it. Give it a moment to render first.
+        await sleep(1500)
+        window.location.href = '/'
+      }
       return Promise.reject(err)
     }
 
@@ -105,6 +138,16 @@ apiClient.interceptors.response.use(
         ? 'Request timed out. Please try again.'
         : "Can't reach the server — check your connection and try again."
       pushToast(message, 'error')
+      return Promise.reject(err)
+    }
+
+    if (status >= 500) {
+      // An unexpected server error (vs. a 4xx a page often handles itself
+      // with inline validation) — without this, callers that only restore
+      // their own state on failure (e.g. giving a draft back) look like
+      // they silently did nothing.
+      const appError = toAppError(err, 'Something went wrong on our end. Please try again.')
+      pushToast(appError.detail, 'error', appError.requestId)
       return Promise.reject(err)
     }
 

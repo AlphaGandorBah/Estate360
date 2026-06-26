@@ -1,0 +1,13 @@
+intent: search_preferences
+examples:
+  - "how do I set my search preferences"
+  - "where do I set preferred areas"
+  - "can I set a preferred price range"
+  - "how to set my preferred bedrooms"
+  - "update my search preferences"
+  - "set my preferred property type"
+responses:
+  - "Go to the Preferences page (tenant account menu) to set your preferred areas, property types, bedroom count, and price range. Estate360 uses these, along with your saved listings, to power your 'Recommended for you' suggestions."
+followups:
+  - "How do recommendations work?"
+  - "How do I save a listing?"

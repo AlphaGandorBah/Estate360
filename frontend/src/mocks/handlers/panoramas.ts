@@ -23,12 +23,12 @@ function scheduleProcessing(id: number) {
 }
 
 export const panoramasHandlers = [
-  http.get('/api/v1/listings/:listingId/panoramas/', ({ params }) => {
+  http.get('/api/v1/listings/:listingId/panoramas', ({ params }) => {
     const results = panoramas.filter((p) => p.listing_id === Number(params.listingId))
     return HttpResponse.json({ count: results.length, next: null, previous: null, results })
   }),
 
-  http.post('/api/v1/listings/:listingId/panoramas/', async ({ params }) => {
+  http.post('/api/v1/listings/:listingId/panoramas', async ({ params }) => {
     const panorama: Panorama = {
       id: nextId++,
       listing_id: Number(params.listingId),

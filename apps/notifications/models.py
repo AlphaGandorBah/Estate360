@@ -9,12 +9,14 @@ class Notification(models.Model):
     TYPE_NEW_MESSAGE = "new_message"
     TYPE_REPORT_UPDATE = "report_update"
     TYPE_PANORAMA_READY = "panorama_ready"
+    TYPE_MODERATION_WARNING = "moderation_warning"
     TYPE_CHOICES = [
         (TYPE_LISTING_DECISION, "Listing Decision"),
         (TYPE_VERIFICATION_RESULT, "Verification Result"),
         (TYPE_NEW_MESSAGE, "New Message"),
         (TYPE_REPORT_UPDATE, "Report Update"),
         (TYPE_PANORAMA_READY, "Panorama Ready"),
+        (TYPE_MODERATION_WARNING, "Moderation Warning"),
     ]
 
     user = models.ForeignKey(

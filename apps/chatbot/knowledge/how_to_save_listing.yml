@@ -10,8 +10,9 @@ examples:
   - "where are my saved listings"
   - "how to view saved properties"
   - "how to unsave a listing"
+  - "where can I see my favourites"
 responses:
   - "Click the heart icon on any listing to save it to your favourites. View all your saved listings in the 'Saved' section of your account. You can unsave at any time by clicking the heart icon again."
 followups:
-  - "How do I view my saved listings?"
-  - "Can I get recommendations based on saved listings?"
+  - "How do recommendations work?"
+  - "How do I set my search preferences?"

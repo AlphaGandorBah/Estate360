@@ -5,8 +5,9 @@ import { listingsApi, panoramasApi, reportsApi, messagingApi, savedApi } from '@
 import { useAuthStore } from '@/lib/auth'
 import { AREA_LABELS, PROPERTY_LABELS } from '@/lib/utils'
 import { formatPrice, formatDate } from '@/lib/intl'
-import PanoramaViewer from '@/components/listings/PanoramaViewer'
+import VirtualTourModal from '@/components/listings/VirtualTourModal'
 import LocationMap from '@/components/listings/LocationMap'
+import Avatar from '@/components/common/Avatar'
 import type { ReportReason } from '@/types'
 
 export default function ListingDetailPage() {
@@ -21,7 +22,8 @@ export default function ListingDetailPage() {
   const [showReport, setShowReport] = useState(false)
   const [contactMsg, setContactMsg] = useState('')
   const [showContact, setShowContact] = useState(false)
-  const [activeThumb, setActiveThumb] = useState(0)
+  const [tourOpen, setTourOpen] = useState(false)
+  const [tourIndex, setTourIndex] = useState(0)
 
   const { data: listing, isLoading } = useQuery({
     queryKey: ['listing', listingId],
@@ -67,7 +69,7 @@ export default function ListingDetailPage() {
     onSuccess: (convId) => navigate(`/conversations/${convId}`),
   })
 
-  const panoramas = panoramaRes?.results ?? []
+  const panoramas = (panoramaRes?.results ?? []).filter((p) => p.status === 'ready' && p.preview_url)
 
   if (isLoading) return (
     <div className="space-y-4">
@@ -82,21 +84,22 @@ export default function ListingDetailPage() {
     <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
       {/* Main */}
       <div className="lg:col-span-2 space-y-6">
-        {/* 360 viewer + thumbnails / placeholder */}
+        {/* Virtual tour cover + launcher */}
         {panoramas.length > 0 ? (
-          <div>
-            <PanoramaViewer panorama={panoramas[activeThumb]} />
-            {panoramas.length > 1 && (
-              <div className="mt-2 flex gap-2 overflow-x-auto">
-                {panoramas.map((p, i) => (
-                  <button key={p.id} onClick={() => setActiveThumb(i)}
-                    className={`h-16 w-20 shrink-0 overflow-hidden rounded-lg border-2 ${i === activeThumb ? 'border-emerald-500' : 'border-transparent'}`}>
-                    <img src={p.thumbnail_url ?? ''} alt="" className="h-full w-full object-cover" />
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
+          <button type="button" onClick={() => { setTourIndex(0); setTourOpen(true) }}
+            className="group relative block h-72 w-full overflow-hidden rounded-2xl bg-black md:h-96 lg:h-[32rem]">
+            <img src={panoramas[0].thumbnail_url ?? ''} alt="" className="h-full w-full object-cover opacity-80 transition group-hover:opacity-60" />
+            <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-black/20">
+              <span className="flex h-16 w-16 items-center justify-center rounded-full bg-white/90 text-emerald-700 shadow-lg transition group-hover:scale-105">
+                <svg className="h-7 w-7" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M8 5v14l11-7z" />
+                </svg>
+              </span>
+              <span className="rounded-full bg-black/60 px-4 py-1.5 text-sm font-semibold text-white">
+                Take the Virtual Tour
+              </span>
+            </div>
+          </button>
         ) : (
           <div className="flex h-72 items-center justify-center rounded-2xl bg-gray-100 text-gray-400 dark:bg-gray-800 dark:text-gray-500">
             No images
@@ -213,9 +216,7 @@ export default function ListingDetailPage() {
           <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-300">Listed by</h2>
           <Link to={`/profile/${listing.owner_id}`}
             className="mt-3 flex items-center gap-3 hover:opacity-80">
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-emerald-100 text-sm font-semibold text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400">
-              {listing.owner_name?.[0] ?? '?'}
-            </div>
+            <Avatar name={listing.owner_name} />
             <div>
               <div className="font-medium text-gray-900 dark:text-gray-100">{listing.owner_name}</div>
               {listing.owner_verified && (
@@ -248,6 +249,15 @@ export default function ListingDetailPage() {
             </div>
           </div>
         </div>
+      )}
+
+      {tourOpen && panoramas.length > 0 && (
+        <VirtualTourModal
+          panoramas={panoramas}
+          index={tourIndex}
+          onIndexChange={setTourIndex}
+          onClose={() => setTourOpen(false)}
+        />
       )}
     </div>
   )

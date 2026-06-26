@@ -8,9 +8,17 @@ interface Props {
   onChange: (lat: number, lng: number) => void
 }
 
+// The backend stores lat/lng as DecimalField(max_digits=9, decimal_places=6)
+// — about 11cm of precision, plenty for a property pin. Leaflet's click/drag
+// events report raw float coordinates with 15+ significant digits, which
+// blows past max_digits and gets rejected by the API with a field error the
+// form has nowhere to show, surfacing only as a generic "Body validation
+// failed" banner. Round to the field's actual precision before it leaves the map.
+const round6 = (n: number) => Math.round(n * 1e6) / 1e6
+
 function ClickHandler({ onChange }: { onChange: (lat: number, lng: number) => void }) {
   useMapEvents({
-    click: (e) => onChange(e.latlng.lat, e.latlng.lng),
+    click: (e) => onChange(round6(e.latlng.lat), round6(e.latlng.lng)),
   })
   return null
 }
@@ -33,7 +41,7 @@ export default function LocationPicker({ lat, lng, onChange }: Props) {
               eventHandlers={{
                 dragend: (e) => {
                   const pos = e.target.getLatLng()
-                  onChange(pos.lat, pos.lng)
+                  onChange(round6(pos.lat), round6(pos.lng))
                 },
               }}
             />

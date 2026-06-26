@@ -6,6 +6,8 @@ media/
 staticfiles/
 .env
 
+apps/chatbot/models/
+
 frontend/node_modules/
 frontend/dist/
 frontend/.vite/

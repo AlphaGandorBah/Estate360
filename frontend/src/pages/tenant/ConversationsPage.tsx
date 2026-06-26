@@ -1,22 +1,33 @@
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
-import { useQuery } from '@tanstack/react-query'
+import { Link, useNavigate } from 'react-router-dom'
+import { useMutation, useQuery } from '@tanstack/react-query'
 import { messagingApi } from '@/api'
 import { useAuthStore } from '@/lib/auth'
 import { formatRelative } from '@/lib/intl'
+import { pushToast } from '@/lib/toast'
+import Avatar from '@/components/common/Avatar'
 import type { Conversation } from '@/types'
 
 export default function ConversationsPage() {
   const [page, setPage] = useState(1)
   const user = useAuthStore((s) => s.user)
+  const navigate = useNavigate()
 
   const { data, isLoading } = useQuery({
     queryKey: ['conversations', page],
     queryFn: () => messagingApi.conversations(page).then((r) => r.data),
   })
 
-  const otherName = (c: Conversation) =>
-    user?.role === 'landlord' ? c.tenant_name : c.landlord_name
+  const contactSupportMut = useMutation({
+    mutationFn: () => messagingApi.startSupportConversation().then((r) => r.data),
+    onSuccess: (conv) => navigate(`/conversations/${conv.id}`),
+    onError: () => pushToast('Could not reach support — please try again.', 'error'),
+  })
+
+  const otherName = (c: Conversation) => {
+    if (c.is_support) return user?.role === 'admin' ? c.initiator_name : 'Admin Support'
+    return user?.id === c.initiator_id ? c.landlord_name : c.initiator_name
+  }
 
   if (isLoading) return (
     <div className="space-y-3">
@@ -28,8 +39,23 @@ export default function ConversationsPage() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Messages</h1>
-      <p className="mt-1 text-gray-500 dark:text-gray-400">{data?.count ?? 0} conversations</p>
+      <div className="flex items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+            {user?.role === 'admin' ? 'Support Inbox' : 'Messages'}
+          </h1>
+          <p className="mt-1 text-gray-500 dark:text-gray-400">{data?.count ?? 0} conversations</p>
+        </div>
+        {user?.role !== 'admin' && (
+          <button
+            onClick={() => contactSupportMut.mutate()}
+            disabled={contactSupportMut.isPending}
+            className="shrink-0 rounded-xl border border-emerald-600 px-4 py-2 text-sm font-semibold text-emerald-600 hover:bg-emerald-50 disabled:opacity-40 dark:border-emerald-400 dark:text-emerald-400 dark:hover:bg-emerald-900/20"
+          >
+            Contact Support
+          </button>
+        )}
+      </div>
 
       {!data?.results.length && (
         <div className="mt-8 rounded-xl border border-gray-200 bg-white py-16 text-center text-gray-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400">
@@ -41,9 +67,7 @@ export default function ConversationsPage() {
         {data?.results.map((c) => (
           <Link key={c.id} to={`/conversations/${c.id}`}
             className="flex items-center gap-4 rounded-xl border border-gray-200 bg-white p-4 hover:bg-gray-50 transition dark:border-gray-700 dark:bg-gray-800 dark:hover:bg-gray-700">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-sm font-semibold text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400">
-              {otherName(c)?.[0] ?? '?'}
-            </div>
+            <Avatar name={otherName(c)} />
             <div className="flex-1 min-w-0">
               <div className="flex items-center justify-between gap-2">
                 <span className="font-medium text-gray-900 truncate dark:text-gray-100">{otherName(c)}</span>
@@ -52,7 +76,7 @@ export default function ConversationsPage() {
                 </span>
               </div>
               <div className="text-sm text-gray-500 truncate dark:text-gray-400">
-                {c.listing_id ? `Listing #${c.listing_id}` : 'General enquiry'}
+                {c.is_support ? 'Support' : c.listing_id ? `Listing #${c.listing_id}` : 'General enquiry'}
               </div>
             </div>
             {c.unread_count > 0 && (

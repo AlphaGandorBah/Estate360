@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query'
 import { usersApi } from '@/api'
 import api from '@/lib/apiClient'
 import ListingCard from '@/components/listings/ListingCard'
+import Avatar from '@/components/common/Avatar'
 import type { Listing, PaginatedResponse } from '@/types'
 
 export default function PublicProfilePage() {
@@ -31,15 +32,11 @@ export default function PublicProfilePage() {
     <div className="py-16 text-center text-gray-500 dark:text-gray-400">User not found</div>
   )
 
-  const initial = profile.full_name?.[0]?.toUpperCase() ?? '?'
-
   return (
     <div className="mx-auto max-w-2xl space-y-8">
       <div className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-800">
         <div className="flex items-center gap-5">
-          <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-2xl font-bold text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400">
-            {initial}
-          </div>
+          <Avatar name={profile.full_name} imageUrl={profile.avatar_url} size="xl" />
           <div>
             <div className="flex items-center gap-2">
               <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">{profile.full_name}</h1>

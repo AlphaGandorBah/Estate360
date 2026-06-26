@@ -1,0 +1,14 @@
+intent: available_areas
+examples:
+  - "what areas are available"
+  - "which neighbourhoods do you cover"
+  - "what locations can I search"
+  - "list of areas"
+  - "where in Freetown do you have listings"
+  - "what neighbourhoods are on Estate360"
+  - "which areas can I filter by"
+responses:
+  - "Estate360 currently covers Aberdeen, Lumley, Goderich, Hill Station, Wilberforce, Murray Town, Brookfields, Kissy, Wellington, and Calaba Town (plus an 'Other' catch-all). Ask me for listings in any of these, e.g. 'show me apartments in Lumley'."
+followups:
+  - "Show me listings in Aberdeen"
+  - "2 bedroom apartments under 15,000"

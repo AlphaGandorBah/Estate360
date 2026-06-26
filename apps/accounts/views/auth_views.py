@@ -1,7 +1,6 @@
 """Auth views: register, login, refresh, logout, verify-email, password reset."""
 import structlog
 from django.conf import settings
-from django.contrib.auth import authenticate
 from django.utils import timezone
 from rest_framework import status
 from rest_framework.permissions import AllowAny, IsAuthenticated
@@ -89,26 +88,43 @@ class LoginView(APIView):
         serializer = LoginSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        user = authenticate(
-            request,
-            email=serializer.validated_data["email"],
-            password=serializer.validated_data["password"],
-        )
-        if user is None:
+        try:
+            candidate = User.objects.get(email=serializer.validated_data["email"])
+        except User.DoesNotExist:
+            candidate = None
+
+        # Check the password before revealing anything about account status,
+        # so a banned/wrong-password attempt can't be told apart without
+        # already knowing the correct password.
+        if candidate is None or not candidate.check_password(serializer.validated_data["password"]):
             return Response(
                 {"code": "invalid_credentials", "detail": "Invalid email or password."},
                 status=status.HTTP_401_UNAUTHORIZED,
             )
 
+        if not candidate.is_active:
+            return Response(
+                {"code": "account_banned", "detail": "Your account has been suspended. Contact support for more information."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        user = candidate
         refresh = RefreshToken.for_user(user)
+        avatar_url = None
+        if user.avatar_key:
+            from apps.common.storage import generate_presigned_url
+            avatar_url = generate_presigned_url(user.avatar_key)
         response = Response(
             {
                 "access": str(refresh.access_token),
                 "user": {
                     "id": str(user.id),
                     "email": user.email,
+                    "full_name": user.full_name,
                     "role": user.role,
+                    "avatar_url": avatar_url,
                     "is_verified": user.is_verified,
+                    "is_restricted": user.is_restricted,
                 },
             }
         )
@@ -138,6 +154,29 @@ class RefreshView(APIView):
 
         try:
             refresh = RefreshToken(raw_refresh)
+        except TokenError as exc:
+            return Response(
+                {"code": "invalid_token", "detail": str(exc)},
+                status=status.HTTP_401_UNAUTHORIZED,
+            )
+
+        # A banned user's refresh token is still cryptographically valid, so
+        # without this check they could keep minting working access tokens
+        # even though every request with one is rejected downstream anyway.
+        try:
+            user = User.objects.get(pk=refresh["user_id"])
+        except User.DoesNotExist:
+            return Response(
+                {"code": "invalid_token", "detail": "User not found."},
+                status=status.HTTP_401_UNAUTHORIZED,
+            )
+        if not user.is_active:
+            return Response(
+                {"code": "account_banned", "detail": "Your account has been suspended. Contact support for more information."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        try:
             access = str(refresh.access_token)
             # Blacklist the old token before rotating
             refresh.blacklist()

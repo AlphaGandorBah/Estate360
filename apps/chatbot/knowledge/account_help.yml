@@ -1,0 +1,16 @@
+intent: account_help
+examples:
+  - "how do I update my profile"
+  - "how to change my name"
+  - "how do I change my phone number"
+  - "how do I add a profile photo"
+  - "how to remove my profile picture"
+  - "how do I delete my account"
+  - "can I delete my account"
+  - "how to close my account"
+  - "how do I log out"
+responses:
+  - "Go to Account to update your name, phone number, or profile photo, and to permanently delete your account if you want to leave. Go to Account → Security to log out of this device."
+followups:
+  - "Why is my account restricted?"
+  - "How do I contact support?"

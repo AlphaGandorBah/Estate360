@@ -26,6 +26,7 @@ export type ReportStatus = 'open' | 'reviewing' | 'resolved' | 'dismissed'
 
 export type NotificationKind =
   | 'listing_decision' | 'verification_result' | 'new_message' | 'report_update' | 'panorama_ready'
+  | 'moderation_warning'
 
 // ─── Auth ─────────────────────────────────────────────────────────────────────
 
@@ -35,13 +36,31 @@ export interface User {
   full_name: string
   phone: string
   role: Role
+  avatar_url: string | null
   is_verified: boolean
+  is_active?: boolean
+  is_restricted?: boolean
   date_joined: string
+}
+
+export type AdminActionType =
+  | 'ban_user' | 'unban_user' | 'restrict_user' | 'unrestrict_user'
+  | 'reset_password' | 'delete_user' | 'delete_listing'
+
+export interface AdminActionLog {
+  id: number
+  action: AdminActionType
+  admin_email: string | null
+  target_user_email: string | null
+  target_listing_title: string | null
+  notes: string
+  created_at: string
 }
 
 export interface PublicUser {
   id: string
   full_name: string
+  avatar_url: string | null
   is_verified: boolean
   listings_count: number
   joined_year: number
@@ -49,7 +68,7 @@ export interface PublicUser {
 
 export interface AuthState {
   access: string | null
-  user: Pick<User, 'id' | 'email' | 'role' | 'is_verified'> | null
+  user: Pick<User, 'id' | 'email' | 'full_name' | 'role' | 'avatar_url' | 'is_verified' | 'is_restricted'> | null
 }
 
 // ─── Listings ─────────────────────────────────────────────────────────────────
@@ -79,6 +98,7 @@ export interface Listing {
   lng: number | null
   status: ListingStatus
   rejection_notes?: string
+  viewed_by_me?: boolean
   panoramas: PanoramaInline[]
   created_at: string
   updated_at: string
@@ -138,6 +158,7 @@ export interface SavedListing {
 
 export interface Verification {
   id: number
+  user_name: string
   document_type: DocumentType
   document_front_url: string
   document_back_url: string | null
@@ -152,10 +173,12 @@ export interface Verification {
 
 export interface Conversation {
   id: number
-  tenant_id: string
-  tenant_name: string
-  landlord_id: string
-  landlord_name: string
+  initiator_id: string
+  initiator_name: string
+  initiator_role: Role
+  landlord_id: string | null
+  landlord_name: string | null
+  is_support: boolean
   listing_id: number | null
   last_message_at: string | null
   unread_count: number
@@ -199,6 +222,7 @@ export interface SearchPreference {
 export interface FraudReport {
   id: number
   reporter_id: string
+  reporter_name: string
   listing_id: number | null
   reported_user_id: string | null
   reason: ReportReason

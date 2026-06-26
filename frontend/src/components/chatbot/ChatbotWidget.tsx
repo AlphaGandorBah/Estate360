@@ -1,7 +1,11 @@
 import { useState, useRef, useEffect } from 'react'
+import { Link } from 'react-router-dom'
 import { chatbotApi } from '@/api'
+import type { ChatbotHistoryTurn, ChatbotListingResult } from '@/api/chatbot'
+import { formatPrice } from '@/lib/intl'
+import { AREA_LABELS } from '@/lib/utils'
 
-interface Msg { role: 'user' | 'bot'; text: string; followups?: string[] }
+interface Msg { role: 'user' | 'bot'; text: string; followups?: string[]; results?: ChatbotListingResult[] }
 
 const STORAGE_KEY = 'estate360_chat_session'
 const SEND_DEBOUNCE_MS = 300
@@ -51,12 +55,19 @@ export default function ChatbotWidget() {
     lastSendRef.current = now
     if (throttledUntil && now < throttledUntil) return
 
+    // Built from state as of this send, before the new message is appended —
+    // without this, every message is answered in isolation and "what about
+    // cheaper ones?" or "thanks" have nothing to land on.
+    const history: ChatbotHistoryTurn[] = msgs
+      .slice(-8)
+      .map((m) => ({ role: m.role === 'user' ? 'user' as const : 'assistant' as const, content: m.text }))
+
     setMsgs((m) => [...m, { role: 'user', text: trimmed }])
     setInput('')
     setLoading(true)
     try {
-      const { data } = await chatbotApi.query(trimmed)
-      setMsgs((m) => [...m, { role: 'bot', text: data.reply, followups: data.followups }])
+      const { data } = await chatbotApi.query(trimmed, history)
+      setMsgs((m) => [...m, { role: 'bot', text: data.reply, followups: data.followups, results: data.results }])
     } catch (err: unknown) {
       const status = (err as { response?: { status?: number; headers?: Record<string, string> } })?.response?.status
       if (status === 429) {
@@ -108,6 +119,19 @@ export default function ChatbotWidget() {
                 }`}>
                   {m.text}
                 </div>
+                {m.results?.length ? (
+                  <div className="mt-2 flex w-full max-w-[85%] flex-col gap-1.5">
+                    {m.results.map((r) => (
+                      <Link key={r.id} to={`/listings/${r.id}`}
+                        className="rounded-xl border border-gray-200 bg-white px-3 py-2 text-xs hover:border-emerald-400 hover:bg-emerald-50 dark:border-gray-600 dark:bg-gray-700 dark:hover:bg-gray-600">
+                        <div className="font-medium text-gray-900 dark:text-gray-100">{r.title}</div>
+                        <div className="mt-0.5 text-gray-500 dark:text-gray-400">
+                          {formatPrice(r.price_annual, r.currency)}/yr · {r.bedrooms} bed · {AREA_LABELS[r.location_area] ?? r.location_area}
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
+                ) : null}
                 {m.followups?.length ? (
                   <div className="mt-2 flex flex-wrap gap-1">
                     {m.followups.map((f) => (
@@ -150,9 +174,15 @@ export default function ChatbotWidget() {
 
       <button onClick={() => setOpen((o) => !o)} aria-label={open ? 'Close chat' : 'Open chat'}
         className="flex h-14 w-14 items-center justify-center rounded-full bg-emerald-600 shadow-lg hover:bg-emerald-700">
-        <svg className="h-6 w-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-            d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+        <svg className="h-7 w-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          {/* Robot head: antenna, head outline, eyes, mouth */}
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v3" />
+          <circle cx="12" cy="2.5" r="0.75" fill="currentColor" stroke="none" />
+          <rect x="4" y="6" width="16" height="14" rx="3" strokeWidth={2} />
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2 11v3M22 11v3" />
+          <circle cx="9" cy="13" r="1.4" fill="currentColor" stroke="none" />
+          <circle cx="15" cy="13" r="1.4" fill="currentColor" stroke="none" />
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17h6" />
         </svg>
       </button>
     </div>

@@ -15,6 +15,7 @@ class RegisterSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         password = validated_data.pop("password")
+        validated_data["email"] = User.objects.normalize_email(validated_data["email"]).lower()
         user = User(**validated_data)
         user.set_password(password)
         user.save()
@@ -45,20 +46,33 @@ class PasswordResetConfirmSerializer(serializers.Serializer):
     new_password = serializers.CharField(validators=[validate_password])
 
 
+def get_avatar_url(obj) -> str | None:
+    if not obj.avatar_key:
+        return None
+    from apps.common.storage import generate_presigned_url
+    return generate_presigned_url(obj.avatar_key)
+
+
 class UserProfileSerializer(serializers.ModelSerializer):
+    avatar_url = serializers.SerializerMethodField()
+
     class Meta:
         model = User
-        fields = ["id", "email", "full_name", "phone", "role", "is_verified", "date_joined"]
-        read_only_fields = ["id", "email", "role", "is_verified", "date_joined"]
+        fields = ["id", "email", "full_name", "phone", "role", "avatar_url", "is_verified", "is_restricted", "date_joined"]
+        read_only_fields = ["id", "email", "role", "avatar_url", "is_verified", "is_restricted", "date_joined"]
+
+    def get_avatar_url(self, obj) -> str | None:
+        return get_avatar_url(obj)
 
 
 class PublicUserSerializer(serializers.ModelSerializer):
     listings_count = serializers.SerializerMethodField()
     joined_year = serializers.SerializerMethodField()
+    avatar_url = serializers.SerializerMethodField()
 
     class Meta:
         model = User
-        fields = ["id", "full_name", "is_verified", "listings_count", "joined_year"]
+        fields = ["id", "full_name", "is_verified", "listings_count", "joined_year", "avatar_url"]
 
     def get_listings_count(self, obj) -> int:
         return obj.listings.filter(status="approved").count()
@@ -66,22 +80,35 @@ class PublicUserSerializer(serializers.ModelSerializer):
     def get_joined_year(self, obj) -> int:
         return obj.date_joined.year
 
+    def get_avatar_url(self, obj) -> str | None:
+        return get_avatar_url(obj)
+
 
 class AdminUserSerializer(serializers.ModelSerializer):
+    avatar_url = serializers.SerializerMethodField()
+
     class Meta:
         model = User
-        fields = ["id", "email", "full_name", "phone", "role", "is_verified", "is_active", "date_joined"]
+        fields = [
+            "id", "email", "full_name", "phone", "role", "avatar_url",
+            "is_verified", "is_active", "is_restricted", "date_joined",
+        ]
+
+    def get_avatar_url(self, obj) -> str | None:
+        return get_avatar_url(obj)
 
 
 class LandlordVerificationSerializer(serializers.ModelSerializer):
     document_front_url = serializers.SerializerMethodField()
     document_back_url = serializers.SerializerMethodField()
     selfie_url = serializers.SerializerMethodField()
+    user_name = serializers.CharField(source="user.full_name", read_only=True)
 
     class Meta:
         model = LandlordVerification
         fields = [
             "id",
+            "user_name",
             "document_type",
             "document_front_url",
             "document_back_url",

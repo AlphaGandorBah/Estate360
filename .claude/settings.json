@@ -6,7 +6,9 @@
       "Skill(run:*)",
       "Bash(netstat -ano)",
       "Bash(curl -s -X POST http://localhost:8000/api/v1/auth/login -H \"Content-Type: application/json\" -d '{\"email\":\"admin@estate360.local\",\"password\":\"Admin@123\"}')",
-      "Bash(powershell -Command \"Get-Process -Id 14804 -ErrorAction SilentlyContinue\")"
+      "Bash(powershell -Command \"Get-Process -Id 14804 -ErrorAction SilentlyContinue\")",
+      "Bash(python -m pytest tests/ -q --no-cov)",
+      "Bash(curl -s -m 10 -X POST http://localhost:8000/api/v1/chatbot/query -H \"Content-Type: application/json\" -d '{\"message\":\"i want a listing of 20,000\"}')"
     ]
   }
 }

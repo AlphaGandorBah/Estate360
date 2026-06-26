@@ -2,7 +2,10 @@
   "permissions": {
     "allow": [
       "Bash(xargs grep -ln \"is_admin\\\\|AdminRole\\\\|UserList\\\\|all_users\\\\|list.*user\" -i)",
-      "Bash(xargs grep -ln \"admin/users\\\\|AdminUsers\\\\|createBrowserRouter\\\\|Routes>\")"
+      "Bash(xargs grep -ln \"admin/users\\\\|AdminUsers\\\\|createBrowserRouter\\\\|Routes>\")",
+      "PowerShell(Get-NetConnectionProfile)",
+      "Bash(netsh advfirewall *)",
+      "PowerShell(\\([Security.Principal.WindowsIdentity]::GetCurrent\\(\\)\\).Groups -contains 'S-1-5-32-544')"
     ]
   }
 }

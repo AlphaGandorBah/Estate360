@@ -18,11 +18,11 @@ declare global {
   }
 }
 
-interface Props { panorama: Panorama | undefined }
+interface Props { panorama: Panorama | undefined; className?: string }
 
 type LoadState = 'idle' | 'loading' | 'ready' | 'error'
 
-export default function PanoramaViewer({ panorama }: Props) {
+export default function PanoramaViewer({ panorama, className }: Props) {
   const containerRef = useRef<HTMLDivElement>(null)
   const viewerRef = useRef<PannellumViewer | null>(null)
   const autoLoad = !isSaveDataEnabled()
@@ -61,7 +61,12 @@ export default function PanoramaViewer({ panorama }: Props) {
 
       try {
         const viewer = window.pannellum.viewer(containerRef.current, {
-          type: panorama.projection || 'equirectangular',
+          // Pannellum's renderer only accepts 'equirectangular' | 'cubemap' | 'multires'
+          // for its `type` config — it throws synchronously on anything else (e.g. our
+          // backend's 'cylindrical' classification), which this viewer never recovers
+          // from since we always feed it a single image. 'equirectangular' is the only
+          // mode that fits a single preview_url regardless of the source photo's shape.
+          type: 'equirectangular',
           panorama: panorama.preview_url,
           autoLoad,
           autoRotate: prefersReducedMotion ? 0 : -2,
@@ -95,14 +100,14 @@ export default function PanoramaViewer({ panorama }: Props) {
 
   if (!panorama || panorama.status !== 'ready' || !panorama.preview_url) {
     return (
-      <div className="flex h-72 items-center justify-center rounded-2xl bg-gray-100 text-gray-400 md:h-96 lg:h-[32rem] dark:bg-gray-800 dark:text-gray-500">
+      <div className={`flex items-center justify-center bg-gray-100 text-gray-400 dark:bg-gray-800 dark:text-gray-500 ${className ?? 'h-72 rounded-2xl md:h-96 lg:h-[32rem]'}`}>
         No images
       </div>
     )
   }
 
   return (
-    <div className="relative h-72 w-full overflow-hidden rounded-2xl bg-black md:h-96 lg:h-[32rem]">
+    <div className={`relative w-full overflow-hidden bg-black ${className ?? 'h-72 rounded-2xl md:h-96 lg:h-[32rem]'}`}>
       <div ref={containerRef} className="h-full w-full" />
 
       {state === 'error' && (

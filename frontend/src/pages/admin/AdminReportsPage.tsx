@@ -3,10 +3,25 @@ import { Link } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { adminApi } from '@/api'
 import { formatRelative } from '@/lib/intl'
+import { getErrorMessage } from '@/lib/utils'
+import { pushToast } from '@/lib/toast'
+import Avatar from '@/components/common/Avatar'
 
+type FilterStatus = 'open' | 'resolved' | 'dismissed'
 type Resolution = 'dismissed' | 'warning_issued' | 'listing_removed'
 
+const STATUS_TABS: FilterStatus[] = ['open', 'resolved', 'dismissed']
+
+// The dropdown offers three real-world outcomes; the API only has a
+// decision (resolved/dismissed) + an optional remedial action.
+const RESOLUTION_TO_PAYLOAD: Record<Resolution, { decision: string; action?: string }> = {
+  dismissed: { decision: 'dismissed' },
+  warning_issued: { decision: 'resolved', action: 'warn' },
+  listing_removed: { decision: 'resolved', action: 'remove_listing' },
+}
+
 export default function AdminReportsPage() {
+  const [status, setStatus] = useState<FilterStatus>('open')
   const [page, setPage] = useState(1)
   const [resolveId, setResolveId] = useState<number | null>(null)
   const [resolution, setResolution] = useState<Resolution>('dismissed')
@@ -14,35 +29,44 @@ export default function AdminReportsPage() {
   const qc = useQueryClient()
 
   const { data, isLoading } = useQuery({
-    queryKey: ['admin-reports', page],
-    queryFn: () => adminApi.reports({ page }).then((r) => r.data),
+    queryKey: ['admin-reports', status, page],
+    queryFn: () => adminApi.reports({ status, page }).then((r) => r.data),
   })
 
   const resolveMut = useMutation({
     mutationFn: ({ id, resolution, note }: { id: number; resolution: Resolution; note: string }) =>
-      adminApi.resolveReport(id, resolution, note),
+      adminApi.resolveReport(id, { ...RESOLUTION_TO_PAYLOAD[resolution], notes: note }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['admin-reports'] })
       setResolveId(null)
       setNote('')
+      setResolution('dismissed')
     },
+    onError: (err) => pushToast(getErrorMessage(err, 'Failed to resolve report'), 'error'),
   })
-
-  if (isLoading) return (
-    <div className="space-y-3">
-      {Array.from({ length: 5 }).map((_, i) => (
-        <div key={i} className="h-20 animate-pulse rounded-xl bg-gray-200 dark:bg-gray-700" />
-      ))}
-    </div>
-  )
 
   return (
     <div>
       <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Fraud reports</h1>
 
-      {!data?.results.length && (
-        <div className="mt-8 rounded-xl border border-gray-200 bg-white py-16 text-center text-gray-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400">
-          No open reports
+      <div className="mt-4 flex gap-2 border-b border-gray-200 dark:border-gray-700">
+        {STATUS_TABS.map((s) => (
+          <button key={s} onClick={() => { setStatus(s); setPage(1) }}
+            className={`pb-2 px-3 text-sm capitalize transition border-b-2 ${
+              status === s
+                ? 'border-emerald-600 text-emerald-700 font-medium dark:text-emerald-400'
+                : 'border-transparent text-gray-500 dark:text-gray-400'
+            }`}>
+            {s}
+          </button>
+        ))}
+      </div>
+
+      {isLoading && (
+        <div className="mt-4 space-y-3">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <div key={i} className="h-20 animate-pulse rounded-xl bg-gray-200 dark:bg-gray-700" />
+          ))}
         </div>
       )}
 
@@ -50,38 +74,40 @@ export default function AdminReportsPage() {
         {data?.results.map((r) => (
           <div key={r.id} className="rounded-xl border border-gray-200 bg-white p-5 dark:border-gray-700 dark:bg-gray-800">
             <div className="flex items-start justify-between gap-4">
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
-                  <span className="rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-700 capitalize dark:bg-red-900/30 dark:text-red-400">
-                    {r.reason.replace(/_/g, ' ')}
-                  </span>
-                  <span className="text-xs text-gray-400 dark:text-gray-500">{formatRelative(r.created_at)}</span>
+              <div className="flex flex-1 min-w-0 items-start gap-3">
+                <Avatar name={r.reporter_name} />
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-700 capitalize dark:bg-red-900/30 dark:text-red-400">
+                      {r.reason.replace(/_/g, ' ')}
+                    </span>
+                    <span className="text-xs text-gray-400 dark:text-gray-500">{formatRelative(r.created_at)}</span>
+                  </div>
+                  {r.listing_id ? (
+                    <Link to={`/listings/${r.listing_id}`}
+                      className="mt-1 block font-medium text-gray-900 hover:text-emerald-600 truncate dark:text-gray-100 dark:hover:text-emerald-400">
+                      Listing #{r.listing_id}
+                    </Link>
+                  ) : (
+                    <div className="mt-1 font-medium text-gray-900 dark:text-gray-100">No listing attached</div>
+                  )}
+                  <div className="text-sm text-gray-500 dark:text-gray-400">
+                    Reported by {r.reporter_name}
+                  </div>
+                  {r.description && (
+                    <div className="mt-1 text-sm text-gray-600 italic dark:text-gray-300">"{r.description}"</div>
+                  )}
+                  {r.resolution_notes && (
+                    <div className="mt-1 text-xs text-gray-500 dark:text-gray-400">Resolution: {r.resolution_notes}</div>
+                  )}
                 </div>
-                {r.listing_id ? (
-                  <Link to={`/listings/${r.listing_id}`}
-                    className="mt-1 block font-medium text-gray-900 hover:text-emerald-600 truncate dark:text-gray-100 dark:hover:text-emerald-400">
-                    Listing #{r.listing_id}
-                  </Link>
-                ) : (
-                  <div className="mt-1 font-medium text-gray-900 dark:text-gray-100">No listing attached</div>
-                )}
-                <div className="text-sm text-gray-500 dark:text-gray-400">
-                  Reporter ID: {r.reporter_id}
-                </div>
-                {r.description && (
-                  <div className="mt-1 text-sm text-gray-600 italic dark:text-gray-300">"{r.description}"</div>
-                )}
-                {r.resolution_notes && (
-                  <div className="mt-1 text-xs text-gray-500 dark:text-gray-400">Resolution: {r.resolution_notes}</div>
-                )}
               </div>
-              {r.status === 'open' && (
+              {status === 'open' ? (
                 <button onClick={() => setResolveId(r.id)}
                   className="shrink-0 rounded-lg border border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700">
                   Resolve
                 </button>
-              )}
-              {r.status !== 'open' && (
+              ) : (
                 <span className="shrink-0 rounded-full bg-gray-100 px-2 py-1 text-xs text-gray-600 capitalize dark:bg-gray-700 dark:text-gray-300">
                   {r.status.replace(/_/g, ' ')}
                 </span>
@@ -90,6 +116,12 @@ export default function AdminReportsPage() {
           </div>
         ))}
       </div>
+
+      {!data?.results.length && !isLoading && (
+        <div className="mt-6 rounded-xl border border-gray-200 bg-white py-12 text-center text-gray-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400">
+          No {status} reports
+        </div>
+      )}
 
       {(data?.next || data?.previous) && (
         <div className="mt-6 flex justify-center gap-3">

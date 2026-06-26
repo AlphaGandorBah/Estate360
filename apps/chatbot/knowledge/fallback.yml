@@ -4,8 +4,8 @@ examples:
   - "asdkjasd"
   - "blah blah"
 responses:
-  - "I'm not sure — try the search bar or contact a landlord directly. You can also ask: 'how does verification work?', 'how do I report a listing?', or 'show me listings in Aberdeen'."
+  - "I'm not sure — try the search bar, or ask me something like 'show me 2 bedroom apartments in Aberdeen', 'how does verification work?', or 'how do I contact support?'."
 followups:
   - "How does verification work?"
-  - "How do I report a listing?"
+  - "How do I contact support?"
   - "Show me listings in Aberdeen"

@@ -13,8 +13,11 @@ examples:
   - "what is estate360"
   - "help me"
   - "can you help me"
+  - "what can you help with"
+  - "what can I ask you"
+  - "what kind of questions can you answer"
 responses:
-  - "Hi! I'm the Estate360 assistant. I can help with finding listings, saving favourites, messaging landlords, landlord verification, reporting fraud, and how pricing works. What do you need?"
+  - "Hi! I'm the Estate360 assistant. I can help with finding listings, saving favourites, messaging landlords, landlord verification, reporting fraud, account settings, and how pricing works. What do you need?"
 followups:
   - "Show me listings in Aberdeen"
   - "How does verification work?"

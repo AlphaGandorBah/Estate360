@@ -5,6 +5,8 @@ import ProtectedRoute from '@/components/layout/ProtectedRoute'
 import ToastHost from '@/components/layout/ToastHost'
 import { usersApi } from '@/api'
 import { useAuthStore, refreshAccessToken } from '@/lib/auth'
+import { pushToast } from '@/lib/toast'
+import { toAppError } from '@/lib/utils'
 
 // Every route below is its own lazy chunk so the initial bundle only pays
 // for the app shell — required for the low-end-Android/3G target (bundle
@@ -38,6 +40,7 @@ const AdminUsersPage = lazy(() => import('@/pages/admin/AdminUsersPage'))
 const AdminListingsPage = lazy(() => import('@/pages/admin/AdminListingsPage'))
 const AdminVerificationsPage = lazy(() => import('@/pages/admin/AdminVerificationsPage'))
 const AdminReportsPage = lazy(() => import('@/pages/admin/AdminReportsPage'))
+const AdminActionLogPage = lazy(() => import('@/pages/admin/AdminActionLogPage'))
 
 const AccountPage = lazy(() => import('@/pages/account/AccountPage'))
 const AccountSecurityPage = lazy(() => import('@/pages/account/AccountSecurityPage'))
@@ -76,7 +79,16 @@ function useAuthBootstrap() {
         const { data: user } = await usersApi.me()
         if (!cancelled) useAuthStore.getState().setAuth(access, user)
       })
-      .catch(() => { /* no valid session — proceed logged out */ })
+      .catch((err) => {
+        // Most refresh failures here are just a genuinely expired session —
+        // normal, not worth surfacing. A ban is the one case where silently
+        // landing them logged-out would be confusing, since nothing else on
+        // screen explains why.
+        if (!cancelled && err?.response?.data?.code === 'account_banned') {
+          const appError = toAppError(err, 'Your account has been suspended.')
+          pushToast(appError.detail, 'error', appError.requestId)
+        }
+      })
       .finally(() => { if (!cancelled) setReady(true) })
     return () => { cancelled = true }
   }, [])
@@ -141,6 +153,7 @@ export default function App() {
                 <Route path="/admin/listings" element={<AdminListingsPage />} />
                 <Route path="/admin/verifications" element={<AdminVerificationsPage />} />
                 <Route path="/admin/reports" element={<AdminReportsPage />} />
+                <Route path="/admin/action-log" element={<AdminActionLogPage />} />
               </Route>
             </Route>
 

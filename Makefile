@@ -1,4 +1,4 @@
-.PHONY: dev test seed schema migrate lint typecheck
+.PHONY: dev test seed schema migrate lint typecheck chatbot-model
 
 dev:
 	docker-compose up -d db redis minio clamav
@@ -14,6 +14,9 @@ test:
 
 seed:
 	python manage.py seed --settings=config.settings.dev
+
+chatbot-model:
+	python manage.py download_chatbot_model --settings=config.settings.dev
 
 schema:
 	python manage.py spectacular --color --file docs/openapi.yaml --settings=config.settings.dev

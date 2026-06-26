@@ -25,6 +25,12 @@ export default function NotificationBell() {
   const onMessage = useCallback((msg: Record<string, unknown>) => {
     if (msg.type === 'notification.new') {
       qc.invalidateQueries({ queryKey: ['notifications'] })
+      // The conversation list/dashboard previews have no WS room of their
+      // own (only an open conversation's detail page does) — without this
+      // they'd only pick up a new message on the next manual refresh.
+      if (msg.kind === 'new_message') {
+        qc.invalidateQueries({ queryKey: ['conversations'] })
+      }
     }
   }, [qc])
 

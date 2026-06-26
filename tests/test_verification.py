@@ -127,6 +127,28 @@ class TestAdminVerificationViews:
         resp = landlord_client.get("/api/v1/admin/verifications")
         assert resp.status_code == 403
 
+    def test_status_filter(self, admin_client, verified_landlord, tenant_user):
+        from apps.accounts.models import LandlordVerification
+        pending = LandlordVerification.objects.create(
+            user=verified_landlord, document_type="national_id",
+            document_front_key="k1", selfie_key="k2", status=LandlordVerification.STATUS_PENDING,
+        )
+        approved = LandlordVerification.objects.create(
+            user=tenant_user, document_type="passport",
+            document_front_key="k1", selfie_key="k2", status=LandlordVerification.STATUS_APPROVED,
+        )
+
+        resp = admin_client.get("/api/v1/admin/verifications/")
+        ids = [v["id"] for v in resp.data["results"]]
+        assert pending.pk in ids and approved.pk not in ids
+
+        resp = admin_client.get("/api/v1/admin/verifications/?status=approved")
+        ids = [v["id"] for v in resp.data["results"]]
+        assert approved.pk in ids and pending.pk not in ids
+
+        resp = admin_client.get("/api/v1/admin/verifications/?status=bogus")
+        assert resp.status_code == 400
+
     def test_admin_approve_decision(self, admin_client, verified_landlord):
         from apps.accounts.models import LandlordVerification
         v = LandlordVerification.objects.create(

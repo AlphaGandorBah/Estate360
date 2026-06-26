@@ -73,6 +73,14 @@ class ConversationConsumer(AsyncWebsocketConsumer):
             await self.send(text_data=json.dumps({"type": "error", "code": "unknown_type", "detail": f"Unknown type: {msg_type}"}))
 
     async def _handle_send(self, data: dict):
+        if self.user.is_restricted:
+            await self.send(text_data=json.dumps({
+                "type": "error",
+                "code": "restricted",
+                "detail": "Your account is restricted from messaging.",
+            }))
+            return
+
         body = data.get("body", "").strip()
         if not body:
             await self.send(text_data=json.dumps({"type": "error", "code": "empty_body", "detail": "Body cannot be empty."}))
@@ -95,7 +103,14 @@ class ConversationConsumer(AsyncWebsocketConsumer):
             "created_at": message["created_at"],
             "client_key": str(message["client_key"]) if message["client_key"] else None,
         }
-        await self.channel_layer.group_send(self.group_name, {"type": "chat_message", "payload": payload})
+        try:
+            await self.channel_layer.group_send(self.group_name, {"type": "chat_message", "payload": payload})
+        except Exception as exc:
+            logger.warning("ws_broadcast_failed", error=str(exc), conversation_id=self.conversation_id)
+
+        from channels.db import database_sync_to_async
+        from .utils import notify_new_message
+        await database_sync_to_async(notify_new_message)(self.conversation, self.user)
 
     async def chat_message(self, event):
         await self.send(text_data=json.dumps(event["payload"]))
@@ -140,17 +155,26 @@ class ConversationConsumer(AsyncWebsocketConsumer):
 
     async def _check_participant(self):
         from channels.db import database_sync_to_async
+        from apps.accounts.models import User
         from .models import Conversation
 
         @database_sync_to_async
         def check():
             try:
                 c = Conversation.objects.get(pk=self.conversation_id)
-                return self.user in (c.tenant, c.landlord)
             except Conversation.DoesNotExist:
-                return False
+                return None
+            if c.is_support and self.user.role == User.ROLE_ADMIN:
+                return c
+            if self.user in (c.initiator, c.landlord):
+                return c
+            return None
 
-        return await check()
+        conversation = await check()
+        if conversation is None:
+            return False
+        self.conversation = conversation
+        return True
 
     async def _create_or_get_message(self, body: str, client_key):
         from channels.db import database_sync_to_async

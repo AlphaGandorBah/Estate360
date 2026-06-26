@@ -12,13 +12,22 @@ export const messagingHandlers = [
     HttpResponse.json({ count: conversations.length, next: null, previous: null, results: conversations })),
 
   http.post('/api/v1/conversations/', async ({ request }) => {
-    const body = await request.json() as { landlord_id?: string; listing_id?: number; initial_message?: string }
-    const conv: Conversation = {
-      id: nextConvId++, tenant_id: 'u1', tenant_name: 'Aminata Koroma',
-      landlord_id: body.landlord_id ?? 'u2', landlord_name: 'Mohamed Bah',
-      listing_id: body.listing_id ?? null, last_message_at: new Date().toISOString(),
-      unread_count: 0, created_at: new Date().toISOString(),
+    const body = await request.json() as {
+      support?: boolean; landlord_id?: string; listing_id?: number; initial_message?: string
     }
+    const conv: Conversation = body.support
+      ? {
+          id: nextConvId++, initiator_id: 'u1', initiator_name: 'Aminata Koroma', initiator_role: 'tenant',
+          landlord_id: null, landlord_name: null, is_support: true,
+          listing_id: null, last_message_at: new Date().toISOString(),
+          unread_count: 0, created_at: new Date().toISOString(),
+        }
+      : {
+          id: nextConvId++, initiator_id: 'u1', initiator_name: 'Aminata Koroma', initiator_role: 'tenant',
+          landlord_id: body.landlord_id ?? 'u2', landlord_name: 'Mohamed Bah', is_support: false,
+          listing_id: body.listing_id ?? null, last_message_at: new Date().toISOString(),
+          unread_count: 0, created_at: new Date().toISOString(),
+        }
     conversations = [...conversations, conv]
     if (body.initial_message) {
       messages = [...messages, {
@@ -29,16 +38,16 @@ export const messagingHandlers = [
     return HttpResponse.json(conv, { status: 201 })
   }),
 
-  http.get('/api/v1/conversations/:id/', ({ params }) => {
+  http.get('/api/v1/conversations/:id', ({ params }) => {
     const conv = conversations.find((c) => c.id === Number(params.id))
     if (!conv) return HttpResponse.json({ code: 'not_found', detail: 'Conversation not found.' }, { status: 404 })
     return HttpResponse.json(conv)
   }),
 
-  http.get('/api/v1/conversations/:id/messages/', () =>
+  http.get('/api/v1/conversations/:id/messages', () =>
     HttpResponse.json({ count: messages.length, next: null, previous: null, results: messages })),
 
-  http.post('/api/v1/conversations/:id/messages/', async ({ request }) => {
+  http.post('/api/v1/conversations/:id/messages', async ({ request }) => {
     const body = await request.json() as { body?: string; client_key?: string }
     const msg: Message = {
       id: nextMsgId++, sender_id: 'u1', sender_name: 'Aminata Koroma',

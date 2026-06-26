@@ -259,6 +259,9 @@ PANORAMA_ORIGINAL_RETENTION_DAYS = 30
 # ─── Verification docs ────────────────────────────────────────────────────────
 VERIFICATION_DOC_MAX_SIZE_BYTES = 8 * 1024 * 1024  # 8 MB
 
+# ─── Avatars ──────────────────────────────────────────────────────────────────
+AVATAR_MAX_SIZE_BYTES = 5 * 1024 * 1024  # 5 MB
+
 # ─── Listing housekeeping ─────────────────────────────────────────────────────
 LISTING_STALE_DAYS = 90
 

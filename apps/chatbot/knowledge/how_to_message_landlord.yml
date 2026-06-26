@@ -10,8 +10,10 @@ examples:
   - "can I ask the landlord a question"
   - "how to inquire about a property"
   - "start a conversation with a landlord"
+  - "where do I see my conversations"
+  - "how to view my chat with a landlord"
 responses:
-  - "Open any listing and click 'Message Landlord' to start a conversation. You can also view all your conversations in the Messages section. Messages are real-time and private between you and the landlord."
+  - "Open any listing and click 'Message Landlord' to start a conversation. You can also view all your conversations in the Messages section — messages arrive live there, no need to refresh. Messages are private between you and the landlord."
 followups:
-  - "How do I view my messages?"
   - "Is messaging free?"
+  - "How do I save a listing?"

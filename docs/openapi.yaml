@@ -4,16 +4,46 @@ info:
   version: 1.0.0
   description: Real estate marketplace for Freetown, Sierra Leone.
 paths:
-  /api/v1/admin/listings/:
+  /api/v1/admin/action-log/:
     get:
-      operationId: admin_listings_retrieve
-      description: GET /admin/listings — pending approval queue.
+      operationId: admin_action_log_retrieve
+      description: GET /admin/action-log — audit trail of admin moderation actions.
       tags:
       - admin
       security:
       - jwtAuth: []
       responses:
         '200':
+          description: No response body
+  /api/v1/admin/listings/:
+    get:
+      operationId: admin_listings_retrieve
+      description: GET /admin/listings — moderation queue, filterable by ?status=
+        (defaults to pending).
+      tags:
+      - admin
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/admin/listings/{id}:
+    delete:
+      operationId: admin_listings_destroy
+      description: DELETE /admin/listings/{id} — takedown for any listing, regardless
+        of status.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - admin
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
           description: No response body
   /api/v1/admin/listings/{id}/decision:
     post:
@@ -79,6 +109,44 @@ paths:
     get:
       operationId: admin_users_retrieve
       description: GET /admin/users — directory of registered users.
+      tags:
+      - admin
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/admin/users/{id}:
+    delete:
+      operationId: admin_users_destroy
+      description: DELETE /admin/users/{id} — soft-deletes a user, mirroring self-service
+        account deletion.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - admin
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/admin/users/{id}/action:
+    post:
+      operationId: admin_users_action_create
+      description: POST /admin/users/{id}/action — ban, unban, restrict, unrestrict,
+        or reset_password.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
       tags:
       - admin
       security:
@@ -261,6 +329,23 @@ paths:
       responses:
         '200':
           description: No response body
+  /api/v1/conversations/{id}:
+    get:
+      operationId: conversations_retrieve_2
+      description: GET /conversations/{id}
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - conversations
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
   /api/v1/conversations/{id}/messages:
     get:
       operationId: conversations_messages_retrieve
@@ -370,7 +455,7 @@ paths:
       responses:
         '204':
           description: No response body
-  /api/v1/listings/{id}/panoramas/:
+  /api/v1/listings/{id}/panoramas:
     get:
       operationId: listings_panoramas_retrieve
       description: GET /listings/{id}/panoramas   POST /listings/{id}/panoramas
@@ -662,6 +747,25 @@ paths:
           description: No response body
     delete:
       operationId: users_me_destroy
+      tags:
+      - users
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/users/me/avatar:
+    post:
+      operationId: users_me_avatar_create
+      tags:
+      - users
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+    delete:
+      operationId: users_me_avatar_destroy
       tags:
       - users
       security:

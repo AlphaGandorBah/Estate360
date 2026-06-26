@@ -1,0 +1,16 @@
+intent: edit_or_delete_listing
+examples:
+  - "how do I edit my listing"
+  - "how to update listing details"
+  - "how do I delete a listing"
+  - "can I remove my listing"
+  - "how to take down my property listing"
+  - "how do I change the price on my listing"
+  - "how to update photos on my listing"
+  - "can I unpublish a listing"
+  - "how to edit a property I posted"
+responses:
+  - "Go to My Listings and click 'Edit' on the listing you want to change. From the edit page you can update any field, or click 'Delete listing' to remove it permanently — that can't be undone."
+followups:
+  - "How do I list my property?"
+  - "How does verification work?"
