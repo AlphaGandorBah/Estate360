@@ -88,8 +88,13 @@ export default function AdminReportsPage() {
                       className="mt-1 block font-medium text-gray-900 hover:text-emerald-600 truncate dark:text-gray-100 dark:hover:text-emerald-400">
                       Listing #{r.listing_id}
                     </Link>
+                  ) : r.reported_user_id ? (
+                    <Link to={`/profile/${r.reported_user_id}`}
+                      className="mt-1 block font-medium text-gray-900 hover:text-emerald-600 truncate dark:text-gray-100 dark:hover:text-emerald-400">
+                      User: {r.reported_user_name ?? r.reported_user_id}
+                    </Link>
                   ) : (
-                    <div className="mt-1 font-medium text-gray-900 dark:text-gray-100">No listing attached</div>
+                    <div className="mt-1 font-medium text-gray-900 dark:text-gray-100">No target attached</div>
                   )}
                   <div className="text-sm text-gray-500 dark:text-gray-400">
                     Reported by {r.reporter_name}
@@ -141,7 +146,7 @@ export default function AdminReportsPage() {
               <select value={resolution} onChange={(e) => setResolution(e.target.value as Resolution)}
                 className="input">
                 <option value="dismissed">Dismiss</option>
-                <option value="warning_issued">Issue warning to landlord</option>
+                <option value="warning_issued">Issue warning to reported user</option>
                 <option value="listing_removed">Remove listing</option>
               </select>
             </div>

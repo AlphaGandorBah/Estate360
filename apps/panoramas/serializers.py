@@ -15,6 +15,8 @@ class PanoramaSerializer(serializers.ModelSerializer):
             "listing_id",
             "room_label",
             "projection",
+            "width",
+            "height",
             "status",
             "failure_reason",
             "ordering",

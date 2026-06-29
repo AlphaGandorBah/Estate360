@@ -62,7 +62,7 @@ export default function Navbar() {
               <NotificationBell />
               <Link to="/account" className="hidden items-center gap-2 md:flex">
                 <Avatar name={user.full_name || user.email} imageUrl={user.avatar_url} size="xs" />
-                <span className="text-sm text-gray-700 dark:text-gray-300">{user.email}</span>
+                <span className="text-sm text-gray-700 dark:text-gray-300">{user.full_name || user.email}</span>
               </Link>
               <button
                 onClick={handleLogout}
@@ -127,7 +127,7 @@ export default function Navbar() {
               <div className="my-2 border-t border-gray-200 dark:border-gray-800" />
               <div className="flex items-center gap-2 px-3 py-1">
                 <Avatar name={user.full_name || user.email} imageUrl={user.avatar_url} size="xs" />
-                <span className="text-xs text-gray-500 dark:text-gray-400">{user.email}</span>
+                <span className="text-xs text-gray-500 dark:text-gray-400">{user.full_name || user.email}</span>
               </div>
               <button onClick={handleLogout} className={`${mobileLinkCls} w-full text-left text-red-600 dark:text-red-400`}>
                 Logout

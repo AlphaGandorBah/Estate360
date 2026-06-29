@@ -3,9 +3,9 @@ import type {
 } from '@/types'
 
 export const mockUsers: User[] = [
-  { id: 'u1', email: 'tenant@example.com', full_name: 'Aminata Koroma', phone: '+23276000001', role: 'tenant', is_verified: false, date_joined: '2025-01-01T00:00:00Z' },
-  { id: 'u2', email: 'landlord@example.com', full_name: 'Mohamed Bah', phone: '+23276000002', role: 'landlord', is_verified: true, date_joined: '2025-01-01T00:00:00Z' },
-  { id: 'u3', email: 'admin@example.com', full_name: 'Estate360 Admin', phone: '', role: 'admin', is_verified: true, date_joined: '2025-01-01T00:00:00Z' },
+  { id: 'u1', email: 'tenant@example.com', full_name: 'Aminata Koroma', phone: '+23276000001', role: 'tenant', is_verified: false, avatar_url: null, date_joined: '2025-01-01T00:00:00Z' },
+  { id: 'u2', email: 'landlord@example.com', full_name: 'Mohamed Bah', phone: '+23276000002', role: 'landlord', is_verified: true, avatar_url: null, date_joined: '2025-01-01T00:00:00Z' },
+  { id: 'u3', email: 'admin@example.com', full_name: 'Estate360 Admin', phone: '', role: 'admin', is_verified: true, avatar_url: null, date_joined: '2025-01-01T00:00:00Z' },
 ]
 
 export const mockListings: Listing[] = [
@@ -29,6 +29,7 @@ export const mockListings: Listing[] = [
 export const mockPanoramas: Panorama[] = [
   {
     id: 1, listing_id: 1, room_label: 'Living room', projection: 'equirectangular',
+    width: 4000, height: 2000,
     status: 'ready', failure_reason: '', ordering: 0,
     tile_url: null, preview_url: 'https://pannellum.org/images/alma.jpg', thumbnail_url: 'https://pannellum.org/images/alma.jpg',
     created_at: '2025-06-01T00:00:00Z',

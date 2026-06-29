@@ -180,6 +180,8 @@ def process_panorama(panorama_id: int, file_obj, content_type: str, file_size: i
     Panorama.objects.filter(pk=panorama_id).update(
         status=Panorama.STATUS_READY,
         projection=projection,
+        width=w,
+        height=h,
         original_key=original_key,
         tiles_prefix=tiles_prefix,
         thumbnail_key=thumbnail_key,

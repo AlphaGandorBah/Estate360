@@ -48,6 +48,13 @@ services:
       - "8000:8000"
     env_file:
       - .env
+    environment:
+      DATABASE_URL: postgres://estate360:estate360@db:5432/estate360
+      REDIS_URL: redis://redis:6379
+      MEDIA_S3_ENDPOINT: http://minio:9000
+      EMAIL_HOST: host.docker.internal
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     depends_on:
       - db
       - redis
@@ -61,9 +68,17 @@ services:
       - mediafiles:/app/media
     env_file:
       - .env
+    environment:
+      DATABASE_URL: postgres://estate360:estate360@db:5432/estate360
+      REDIS_URL: redis://redis:6379
+      MEDIA_S3_ENDPOINT: http://minio:9000
+      EMAIL_HOST: host.docker.internal
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     depends_on:
       - db
       - redis
+      - minio
 
   beat:
     build: .
@@ -72,6 +87,9 @@ services:
       - .:/app
     env_file:
       - .env
+    environment:
+      DATABASE_URL: postgres://estate360:estate360@db:5432/estate360
+      REDIS_URL: redis://redis:6379
     depends_on:
       - db
       - redis

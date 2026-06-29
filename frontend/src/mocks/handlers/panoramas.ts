@@ -34,6 +34,7 @@ export const panoramasHandlers = [
       listing_id: Number(params.listingId),
       room_label: 'New room',
       projection: 'equirectangular',
+      width: null, height: null,
       status: 'pending',
       failure_reason: '',
       ordering: panoramas.length,

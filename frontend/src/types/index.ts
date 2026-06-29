@@ -20,7 +20,10 @@ export type PanoramaStatus = 'pending' | 'processing' | 'ready' | 'failed'
 
 export type PanoramaProjection = 'equirectangular' | 'cylindrical'
 
-export type ReportReason = 'fake_listing' | 'misleading' | 'scam' | 'wrong_price' | 'not_available' | 'other'
+export type ReportReason =
+  | 'fake_listing' | 'misleading' | 'scam' | 'wrong_price' | 'not_available'
+  | 'harassment' | 'abusive_behavior' | 'non_payment' | 'property_damage' | 'unresponsive'
+  | 'other'
 
 export type ReportStatus = 'open' | 'reviewing' | 'resolved' | 'dismissed'
 
@@ -137,6 +140,8 @@ export interface Panorama {
   listing_id: number
   room_label: string
   projection: PanoramaProjection
+  width: number | null
+  height: number | null
   status: PanoramaStatus
   failure_reason: string
   ordering: number
@@ -225,6 +230,7 @@ export interface FraudReport {
   reporter_name: string
   listing_id: number | null
   reported_user_id: string | null
+  reported_user_name: string | null
   reason: ReportReason
   description: string
   status: ReportStatus

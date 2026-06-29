@@ -248,6 +248,16 @@ OTP_RESEND_COOLDOWN = 60  # seconds
 # ─── Idempotency ──────────────────────────────────────────────────────────────
 IDEMPOTENCY_KEY_TTL_SECONDS = 86400  # 24 hours
 
+# IdempotencyMixin hashes request.body for any POST carrying an Idempotency-Key
+# header (the frontend attaches one to every /listings/... write, which covers
+# panorama and verification uploads). Accessing request.body reads the whole
+# multipart payload — file bytes included — into memory, so the cap here must
+# clear the largest multipart body those endpoints accept (a 25 MB panorama,
+# or three 8 MB verification documents in one request) or every real-world
+# upload trips Django's RequestDataTooBig before the view's own size checks
+# ever run.
+DATA_UPLOAD_MAX_MEMORY_SIZE = 30 * 1024 * 1024  # 30 MB
+
 # ─── Panorama ─────────────────────────────────────────────────────────────────
 PANORAMA_MAX_SIZE_BYTES = 25 * 1024 * 1024  # 25 MB
 PANORAMA_MIN_WIDTH = 4000

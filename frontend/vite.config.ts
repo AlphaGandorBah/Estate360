@@ -37,10 +37,24 @@ export default defineConfig({
     alias: { '@': path.resolve(__dirname, './src') },
   },
   server: {
-    host: true,
+    host: '0.0.0.0',
+    port: 5173,
+    strictPort: true,
     proxy: {
       '/api': { target: 'http://127.0.0.1:8000', changeOrigin: true },
-      '/ws':  { target: 'ws://127.0.0.1:8000',  ws: true, changeOrigin: true },
+      '/ws': {
+        target: 'ws://127.0.0.1:8000',
+        ws: true,
+        changeOrigin: true,
+        configure: (proxy) => {
+          // Backend autoreloads on file save, dropping open sockets mid-flight;
+          // the client (lib/ws.ts) already reconnects with backoff, so just
+          // log a one-liner instead of letting Node dump the raw stack trace.
+          proxy.on('error', (err) => {
+            console.warn(`[ws proxy] backend connection lost (${err.message}), client will retry`)
+          })
+        },
+      },
     },
   },
 })

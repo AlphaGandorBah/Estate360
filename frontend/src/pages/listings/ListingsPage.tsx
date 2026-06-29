@@ -58,11 +58,39 @@ function SearchField({ defaultValue, onDebouncedChange }: { defaultValue: string
   )
 }
 
+function FilterSection({ title, badge, defaultOpen, children }: {
+  title: string
+  badge?: string
+  defaultOpen?: boolean
+  children: React.ReactNode
+}) {
+  const [open, setOpen] = useState(!!defaultOpen)
+  return (
+    <div className="border-t border-gray-200 py-4 dark:border-gray-700">
+      <button type="button" onClick={() => setOpen((o) => !o)}
+        className="flex w-full items-center justify-between text-left">
+        <span className="text-xs font-medium uppercase text-gray-500 dark:text-gray-400">
+          {title}{badge && <span className="font-normal normal-case text-emerald-600 dark:text-emerald-400"> ({badge})</span>}
+        </span>
+        <svg className={`h-4 w-4 shrink-0 text-gray-400 transition-transform ${open ? 'rotate-180' : ''}`}
+          fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+        </svg>
+      </button>
+      {open && <div className="mt-2.5">{children}</div>}
+    </div>
+  )
+}
+
 function FilterFields({ filters, setFilter, toggleArr }: {
   filters: ListingFilters
   setFilter: (k: keyof ListingFilters, v: unknown) => void
   toggleArr: (k: 'area' | 'property_type', val: string) => void
 }) {
+  const areaCount = filters.area?.length ?? 0
+  const typeCount = filters.property_type?.length ?? 0
+  const priceCount = [filters.min_price, filters.max_price, filters.min_bedrooms].filter((v) => v !== undefined).length
+
   return (
     <>
       <SearchField defaultValue={filters.q ?? ''} onDebouncedChange={(v) => setFilter('q', v)} />
@@ -84,9 +112,8 @@ function FilterFields({ filters, setFilter, toggleArr }: {
         </div>
       </div>
 
-      <div className="mt-4">
-        <label className="block text-xs font-medium uppercase text-gray-500 dark:text-gray-400">Area</label>
-        <div className="mt-2 space-y-1.5">
+      <FilterSection title="Area" badge={areaCount ? `${areaCount} selected` : undefined} defaultOpen>
+        <div className="space-y-1.5">
           {AREAS.map((a) => (
             <label key={a} className="flex cursor-pointer items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
               <input type="checkbox"
@@ -97,11 +124,10 @@ function FilterFields({ filters, setFilter, toggleArr }: {
             </label>
           ))}
         </div>
-      </div>
+      </FilterSection>
 
-      <div className="mt-4">
-        <label className="block text-xs font-medium uppercase text-gray-500 dark:text-gray-400">Property type</label>
-        <div className="mt-2 space-y-1.5">
+      <FilterSection title="Property type" badge={typeCount ? `${typeCount} selected` : undefined} defaultOpen={typeCount > 0}>
+        <div className="space-y-1.5">
           {TYPES.map((t) => (
             <label key={t} className="flex cursor-pointer items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
               <input type="checkbox"
@@ -112,34 +138,35 @@ function FilterFields({ filters, setFilter, toggleArr }: {
             </label>
           ))}
         </div>
-      </div>
+      </FilterSection>
 
-      <div className="mt-4 grid grid-cols-2 gap-2">
-        <div>
-          <label className="block text-xs font-medium uppercase text-gray-500 dark:text-gray-400">Min price</label>
-          <input type="number" placeholder="0"
-            defaultValue={filters.min_price ?? ''}
-            onChange={(e) => setFilter('min_price', e.target.value ? +e.target.value : undefined)}
+      <FilterSection title="Price & bedrooms" badge={priceCount ? `${priceCount} set` : undefined} defaultOpen={priceCount > 0}>
+        <div className="grid grid-cols-2 gap-2">
+          <div>
+            <label className="block text-xs font-medium text-gray-500 dark:text-gray-400">Min price</label>
+            <input type="number" placeholder="0"
+              defaultValue={filters.min_price ?? ''}
+              onChange={(e) => setFilter('min_price', e.target.value ? +e.target.value : undefined)}
+              className="mt-1 w-full rounded-lg border border-gray-300 bg-white px-2 py-1.5 text-sm text-gray-900 outline-none focus:border-emerald-400 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100" />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-gray-500 dark:text-gray-400">Max price</label>
+            <input type="number" placeholder="Any"
+              defaultValue={filters.max_price ?? ''}
+              onChange={(e) => setFilter('max_price', e.target.value ? +e.target.value : undefined)}
+              className="mt-1 w-full rounded-lg border border-gray-300 bg-white px-2 py-1.5 text-sm text-gray-900 outline-none focus:border-emerald-400 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100" />
+          </div>
+        </div>
+        <div className="mt-3">
+          <label className="block text-xs font-medium text-gray-500 dark:text-gray-400">Min bedrooms</label>
+          <input type="number" min={0} placeholder="Any"
+            defaultValue={filters.min_bedrooms ?? ''}
+            onChange={(e) => setFilter('min_bedrooms', e.target.value ? +e.target.value : undefined)}
             className="mt-1 w-full rounded-lg border border-gray-300 bg-white px-2 py-1.5 text-sm text-gray-900 outline-none focus:border-emerald-400 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100" />
         </div>
-        <div>
-          <label className="block text-xs font-medium uppercase text-gray-500 dark:text-gray-400">Max price</label>
-          <input type="number" placeholder="Any"
-            defaultValue={filters.max_price ?? ''}
-            onChange={(e) => setFilter('max_price', e.target.value ? +e.target.value : undefined)}
-            className="mt-1 w-full rounded-lg border border-gray-300 bg-white px-2 py-1.5 text-sm text-gray-900 outline-none focus:border-emerald-400 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100" />
-        </div>
-      </div>
+      </FilterSection>
 
-      <div className="mt-4">
-        <label className="block text-xs font-medium uppercase text-gray-500 dark:text-gray-400">Min bedrooms</label>
-        <input type="number" min={0} placeholder="Any"
-          defaultValue={filters.min_bedrooms ?? ''}
-          onChange={(e) => setFilter('min_bedrooms', e.target.value ? +e.target.value : undefined)}
-          className="mt-1 w-full rounded-lg border border-gray-300 bg-white px-2 py-1.5 text-sm text-gray-900 outline-none focus:border-emerald-400 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100" />
-      </div>
-
-      <div className="mt-4">
+      <div className="border-t border-gray-200 pt-4 dark:border-gray-700">
         <label className="block text-xs font-medium uppercase text-gray-500 dark:text-gray-400">Sort</label>
         <select defaultValue={filters.sort ?? ''} onChange={(e) => setFilter('sort', e.target.value)}
           className="mt-1 w-full rounded-lg border border-gray-300 bg-white px-2 py-1.5 text-sm text-gray-900 outline-none focus:border-emerald-400 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100">
@@ -188,6 +215,8 @@ export default function ListingsPage() {
 
   const setPage = (p: number) => setSearchParams(paramsFromFilters(filters, p))
 
+  const clearFilters = () => setSearchParams(paramsFromFilters({}, 1))
+
   const handleSave = async (id: number) => {
     if (!user) return
     if (savedIds.has(id)) await listingsApi.unsave(id)
@@ -205,7 +234,15 @@ export default function ListingsPage() {
       {/* Filters sidebar — static on large screens */}
       <aside className="hidden w-64 shrink-0 lg:block">
         <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-700 dark:bg-gray-800">
-          <h2 className="font-semibold text-gray-900 dark:text-gray-100">Filters</h2>
+          <div className="flex items-center justify-between">
+            <h2 className="font-semibold text-gray-900 dark:text-gray-100">Filters</h2>
+            {activeFilterCount > 0 && (
+              <button type="button" onClick={clearFilters}
+                className="text-xs font-medium text-emerald-600 hover:underline dark:text-emerald-400">
+                Clear all
+              </button>
+            )}
+          </div>
           <FilterFields filters={filters} setFilter={setFilter} toggleArr={toggleArr} />
         </div>
       </aside>
@@ -265,8 +302,16 @@ export default function ListingsPage() {
           <div className="relative ml-auto flex h-full w-80 max-w-[85vw] flex-col overflow-y-auto bg-white p-5 dark:bg-gray-800">
             <div className="flex items-center justify-between">
               <h2 className="font-semibold text-gray-900 dark:text-gray-100">Filters</h2>
-              <button onClick={() => setMobileFiltersOpen(false)} aria-label="Close filters"
-                className="flex h-9 w-9 items-center justify-center rounded-md text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700">✕</button>
+              <div className="flex items-center gap-3">
+                {activeFilterCount > 0 && (
+                  <button type="button" onClick={clearFilters}
+                    className="text-xs font-medium text-emerald-600 hover:underline dark:text-emerald-400">
+                    Clear all
+                  </button>
+                )}
+                <button onClick={() => setMobileFiltersOpen(false)} aria-label="Close filters"
+                  className="flex h-9 w-9 items-center justify-center rounded-md text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700">✕</button>
+              </div>
             </div>
             <FilterFields filters={filters} setFilter={setFilter} toggleArr={toggleArr} />
             <button onClick={() => setMobileFiltersOpen(false)}

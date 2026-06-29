@@ -3,11 +3,14 @@ import { useParams, useNavigate, Link } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { listingsApi, panoramasApi, reportsApi, messagingApi, savedApi } from '@/api'
 import { useAuthStore } from '@/lib/auth'
-import { AREA_LABELS, PROPERTY_LABELS } from '@/lib/utils'
+import { AREA_LABELS, PROPERTY_LABELS, getErrorMessage } from '@/lib/utils'
 import { formatPrice, formatDate } from '@/lib/intl'
+import { LISTING_REPORT_REASONS } from '@/lib/reportReasons'
+import { pushToast } from '@/lib/toast'
 import VirtualTourModal from '@/components/listings/VirtualTourModal'
 import LocationMap from '@/components/listings/LocationMap'
 import Avatar from '@/components/common/Avatar'
+import ReportModal from '@/components/common/ReportModal'
 import type { ReportReason } from '@/types'
 
 export default function ListingDetailPage() {
@@ -17,8 +20,6 @@ export default function ListingDetailPage() {
   const navigate = useNavigate()
   const qc = useQueryClient()
 
-  const [reportReason, setReportReason] = useState<ReportReason | ''>('')
-  const [reportDesc, setReportDesc] = useState('')
   const [showReport, setShowReport] = useState(false)
   const [contactMsg, setContactMsg] = useState('')
   const [showContact, setShowContact] = useState(false)
@@ -49,12 +50,16 @@ export default function ListingDetailPage() {
   })
 
   const reportMut = useMutation({
-    mutationFn: () => reportsApi.create({
+    mutationFn: (vars: { reason: ReportReason; description: string }) => reportsApi.create({
       listing: listingId,
-      reason: reportReason as ReportReason,
-      description: reportDesc,
+      reason: vars.reason,
+      description: vars.description,
     }),
-    onSuccess: () => { setShowReport(false); setReportReason(''); setReportDesc('') },
+    onSuccess: () => {
+      setShowReport(false)
+      pushToast('Report submitted. Our team will review it.', 'success')
+    },
+    onError: (err) => pushToast(getErrorMessage(err, 'Failed to submit report'), 'error'),
   })
 
   const contactMut = useMutation({
@@ -154,25 +159,22 @@ export default function ListingDetailPage() {
         {/* Report */}
         {user && (
           <div>
-            <button onClick={() => setShowReport(!showReport)}
-              className="text-xs text-gray-400 hover:text-red-500 dark:text-gray-500 dark:hover:text-red-400">Report this listing</button>
+            <button onClick={() => setShowReport(true)}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-500 hover:border-red-200 hover:bg-red-50 hover:text-red-600 dark:border-gray-700 dark:text-gray-400 dark:hover:border-red-900/40 dark:hover:bg-red-900/20 dark:hover:text-red-400">
+              <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                  d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              Report this listing
+            </button>
             {showReport && (
-              <div className="mt-2 rounded-xl border border-gray-200 p-4 dark:border-gray-700">
-                <select value={reportReason} onChange={(e) => setReportReason(e.target.value as ReportReason)}
-                  className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100">
-                  <option value="">Select reason</option>
-                  {(['fake_listing', 'misleading', 'scam', 'wrong_price', 'not_available', 'other'] as ReportReason[]).map((r) => (
-                    <option key={r} value={r}>{r.replace('_', ' ')}</option>
-                  ))}
-                </select>
-                <textarea value={reportDesc} onChange={(e) => setReportDesc(e.target.value)}
-                  placeholder="Additional details…" rows={3}
-                  className="mt-2 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100" />
-                <button onClick={() => reportMut.mutate()} disabled={!reportReason || reportMut.isPending}
-                  className="mt-2 rounded-lg bg-red-600 px-4 py-2 text-sm text-white disabled:opacity-50">
-                  {reportMut.isPending ? 'Submitting…' : 'Submit report'}
-                </button>
-              </div>
+              <ReportModal
+                title="Report this listing"
+                reasons={LISTING_REPORT_REASONS}
+                isSubmitting={reportMut.isPending}
+                onClose={() => setShowReport(false)}
+                onSubmit={(reason, description) => reportMut.mutate({ reason, description })}
+              />
             )}
           </div>
         )}

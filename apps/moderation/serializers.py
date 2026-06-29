@@ -5,6 +5,7 @@ from .models import FraudReport
 class FraudReportSerializer(serializers.ModelSerializer):
     reporter_id = serializers.UUIDField(source="reporter.id", read_only=True)
     reporter_name = serializers.CharField(source="reporter.full_name", read_only=True)
+    reported_user_name = serializers.CharField(source="reported_user.full_name", default=None, read_only=True)
 
     class Meta:
         model = FraudReport
@@ -14,6 +15,7 @@ class FraudReportSerializer(serializers.ModelSerializer):
             "reporter_name",
             "listing_id",
             "reported_user_id",
+            "reported_user_name",
             "reason",
             "description",
             "status",
@@ -21,7 +23,7 @@ class FraudReportSerializer(serializers.ModelSerializer):
             "created_at",
             "resolved_at",
         ]
-        read_only_fields = ["id", "reporter_id", "reporter_name", "status", "resolution_notes", "created_at", "resolved_at"]
+        read_only_fields = ["id", "reporter_id", "reporter_name", "reported_user_name", "status", "resolution_notes", "created_at", "resolved_at"]
 
 
 class SubmitReportSerializer(serializers.Serializer):
@@ -29,6 +31,11 @@ class SubmitReportSerializer(serializers.Serializer):
     description = serializers.CharField(min_length=10)
     listing_id = serializers.IntegerField(required=False, allow_null=True)
     reported_user_id = serializers.UUIDField(required=False, allow_null=True)
+
+    def validate(self, attrs):
+        if not attrs.get("listing_id") and not attrs.get("reported_user_id"):
+            raise serializers.ValidationError("Either listing_id or reported_user_id is required.")
+        return attrs
 
 
 class ReportDecisionSerializer(serializers.Serializer):

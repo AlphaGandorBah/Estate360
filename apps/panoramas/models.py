@@ -35,6 +35,8 @@ class Panorama(models.Model):
     projection = models.CharField(
         max_length=20, choices=PROJECTION_CHOICES, blank=True
     )
+    width = models.PositiveIntegerField(null=True, blank=True)
+    height = models.PositiveIntegerField(null=True, blank=True)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default=STATUS_PENDING)
     failure_reason = models.TextField(blank=True)
     ordering = models.PositiveSmallIntegerField(default=0)

@@ -1,14 +1,17 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useParams, Link } from 'react-router-dom'
-import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query'
 import { v4 as uuid } from 'uuid'
-import { messagingApi } from '@/api'
+import { messagingApi, reportsApi } from '@/api'
 import { useAuthStore } from '@/lib/auth'
 import { formatRelative } from '@/lib/intl'
 import { pushToast } from '@/lib/toast'
+import { getErrorMessage } from '@/lib/utils'
 import { useWebSocket } from '@/lib/ws'
+import { USER_REPORT_REASONS } from '@/lib/reportReasons'
 import Avatar from '@/components/common/Avatar'
-import type { Message } from '@/types'
+import ReportModal from '@/components/common/ReportModal'
+import type { Message, ReportReason } from '@/types'
 
 export default function ConversationDetailPage() {
   const { id } = useParams<{ id: string }>()
@@ -19,6 +22,7 @@ export default function ConversationDetailPage() {
   const [text, setText] = useState('')
   const bottomRef = useRef<HTMLDivElement>(null)
   const [localMsgs, setLocalMsgs] = useState<Message[]>([])
+  const [showReport, setShowReport] = useState(false)
 
   const { data: conv } = useQuery({
     queryKey: ['conversation', convId],
@@ -105,21 +109,59 @@ export default function ConversationDetailPage() {
         : (user?.id === conv.initiator_id ? conv.landlord_name : conv.initiator_name))
     : '…') ?? '…'
 
+  const otherUserId = conv && !conv.is_support
+    ? (user?.id === conv.initiator_id ? conv.landlord_id : conv.initiator_id)
+    : null
+
+  const reportMut = useMutation({
+    mutationFn: (vars: { reason: ReportReason; description: string }) => reportsApi.reportUser({
+      reported_user_id: otherUserId as string,
+      reason: vars.reason,
+      description: vars.description,
+    }),
+    onSuccess: () => {
+      setShowReport(false)
+      pushToast('Report submitted. Our team will review it.', 'success')
+    },
+    onError: (err) => pushToast(getErrorMessage(err, 'Failed to submit report'), 'error'),
+  })
+
   return (
     <div className="flex h-[calc(100vh-120px)] flex-col rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800">
       {/* Header */}
-      <div className="flex items-center gap-3 border-b border-gray-200 px-5 py-4 dark:border-gray-700">
-        <Avatar name={otherName} size="sm" />
-        <div>
-          <div className="font-medium text-gray-900 dark:text-gray-100">{otherName}</div>
-          {conv?.listing_id && (
-            <Link to={`/listings/${conv.listing_id}`}
-              className="text-xs text-emerald-600 hover:underline dark:text-emerald-400">
-              Listing #{conv.listing_id}
-            </Link>
-          )}
+      <div className="flex items-center justify-between gap-3 border-b border-gray-200 px-5 py-4 dark:border-gray-700">
+        <div className="flex items-center gap-3">
+          <Avatar name={otherName} size="sm" />
+          <div>
+            <div className="font-medium text-gray-900 dark:text-gray-100">{otherName}</div>
+            {conv?.listing_id && (
+              <Link to={`/listings/${conv.listing_id}`}
+                className="text-xs text-emerald-600 hover:underline dark:text-emerald-400">
+                Listing #{conv.listing_id}
+              </Link>
+            )}
+          </div>
         </div>
+        {otherUserId && (
+          <button onClick={() => setShowReport(true)} title={`Report ${otherName}`}
+            className="shrink-0 rounded-lg p-2 text-gray-500 hover:bg-red-50 hover:text-red-500 dark:text-gray-400 dark:hover:bg-red-900/20 dark:hover:text-red-400">
+            <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </button>
+        )}
       </div>
+
+      {showReport && otherUserId && (
+        <ReportModal
+          title={`Report ${otherName}`}
+          reasons={USER_REPORT_REASONS}
+          isSubmitting={reportMut.isPending}
+          onClose={() => setShowReport(false)}
+          onSubmit={(reason, description) => reportMut.mutate({ reason, description })}
+        />
+      )}
 
       {/* Messages */}
       <div className="flex-1 overflow-y-auto p-4 space-y-3">

@@ -22,14 +22,20 @@ class MalwareDetected(APIException):
 def scan_file(file_obj) -> None:
     """
     Scan a file-like object with ClamAV.
-    Raises AntivirusUnavailable if ClamAV is down.
+    Raises AntivirusUnavailable if ClamAV is down, or if CLAMAV_HOST is
+    configured but empty (a misconfiguration, not an intentional opt-out).
     Raises MalwareDetected if the file is infected.
-    Does nothing if CLAMAV_HOST is None (test environments).
+    Does nothing if CLAMAV_HOST is explicitly None (test settings only —
+    see config/settings/test.py). An unset env var falls back to "localhost"
+    in base.py, so this branch is only reachable by an explicit `None`.
     """
     host = getattr(settings, "CLAMAV_HOST", None)
-    if not host:
-        logger.info("clamav_skipped", reason="no host configured")
+    if host is None:
+        logger.info("clamav_skipped", reason="disabled in this environment")
         return
+    if not host:
+        logger.error("clamav_misconfigured", reason="CLAMAV_HOST is set but empty")
+        raise AntivirusUnavailable()
 
     try:
         import pyclamd  # type: ignore[import]

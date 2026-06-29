@@ -6,6 +6,8 @@ interface PannellumViewer {
   destroy: () => void
   on: (event: string, fn: (arg?: unknown) => void) => void
   toggleFullscreen: () => void
+  startAutoRotate: (speed?: number) => void
+  stopAutoRotate: () => void
 }
 
 interface PannellumGlobal {
@@ -28,11 +30,16 @@ export default function PanoramaViewer({ panorama, className }: Props) {
   const autoLoad = !isSaveDataEnabled()
   const [state, setState] = useState<LoadState>(autoLoad ? 'loading' : 'idle')
   const [showHint, setShowHint] = useState(true)
+  const [isRotating, setIsRotating] = useState(
+    () => !window.matchMedia('(prefers-reduced-motion: reduce)').matches,
+  )
 
   useEffect(() => {
     let cancelled = false
     setState(autoLoad ? 'loading' : 'idle')
     setShowHint(true)
+    const prefersReducedMotionAtMount = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    setIsRotating(!prefersReducedMotionAtMount)
 
     // Pannellum can fail on a malformed image deep inside an async image
     // decode callback, outside the try/catch below and without firing its
@@ -57,22 +64,42 @@ export default function PanoramaViewer({ panorama, className }: Props) {
       if (cancelled || !window.pannellum || !containerRef.current) return
 
       viewerRef.current?.destroy()
-      const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+
+      // Pannellum's renderer only accepts 'equirectangular' | 'cubemap' | 'multires' for
+      // its `type` config — it throws synchronously on anything else (e.g. our backend's
+      // 'cylindrical' classification), which this viewer never recovers from since we
+      // always feed it a single image. 'equirectangular' is the only mode that fits a
+      // single preview_url regardless of the source photo's shape — but by default it
+      // assumes the image spans the full 180° vertical sphere, which severely warps a
+      // wide sweep-panorama (e.g. ~6:1) that only covers a much narrower vertical slice.
+      // Telling it the real vaov (derived from the actual aspect ratio) keeps the
+      // horizon flat instead of bowing it into the barrel-distortion "frown" shape.
+      const { width, height } = panorama
+      const vaov = width && height ? Math.min(360 * (height / width), 180) : 180
+      // A narrow vaov (a ~6:1 sweep panorama, say 57°) covers less vertical angle than a
+      // 100° hfov spans on most viewport aspect ratios — so the default zoom level alone
+      // would show black sphere above/below even before factoring in pitch. Capping how
+      // far out the view starts (and can zoom) keeps what's visible within the photo.
+      const hfov = Math.min(100, vaov * 1.5)
 
       try {
         const viewer = window.pannellum.viewer(containerRef.current, {
-          // Pannellum's renderer only accepts 'equirectangular' | 'cubemap' | 'multires'
-          // for its `type` config — it throws synchronously on anything else (e.g. our
-          // backend's 'cylindrical' classification), which this viewer never recovers
-          // from since we always feed it a single image. 'equirectangular' is the only
-          // mode that fits a single preview_url regardless of the source photo's shape.
           type: 'equirectangular',
           panorama: panorama.preview_url,
           autoLoad,
-          autoRotate: prefersReducedMotion ? 0 : -2,
+          autoRotate: prefersReducedMotionAtMount ? 0 : -2,
           compass: true,
           showControls: true,
-          hfov: 100,
+          hfov,
+          maxHfov: hfov,
+          vaov,
+          vOffset: 0,
+          // Without these, dragging/tilting past the photo's actual vertical coverage
+          // reveals empty black sphere above/below it — on a ~6:1 sweep panorama
+          // (vaov well under 180°) that's most of the pitch range, making the tour feel
+          // broken rather than just narrower than a full sphere.
+          minPitch: -vaov / 2,
+          maxPitch: vaov / 2,
           orientationOnByDefault: true,
         })
         viewerRef.current = viewer
@@ -135,6 +162,29 @@ export default function PanoramaViewer({ panorama, className }: Props) {
             Drag to look around
           </span>
         </div>
+      )}
+
+      {state === 'ready' && (
+        <button
+          type="button"
+          onClick={() => {
+            if (isRotating) viewerRef.current?.stopAutoRotate()
+            else viewerRef.current?.startAutoRotate(-2)
+            setIsRotating(!isRotating)
+          }}
+          aria-label={isRotating ? 'Pause auto-rotate' : 'Resume auto-rotate'}
+          className="absolute bottom-3 right-14 flex h-9 w-9 items-center justify-center rounded-full bg-black/60 text-white hover:bg-black/80"
+        >
+          {isRotating ? (
+            <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M6 5h4v14H6zM14 5h4v14h-4z" />
+            </svg>
+          ) : (
+            <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M8 5v14l11-7z" />
+            </svg>
+          )}
+        </button>
       )}
 
       {state === 'ready' && (

@@ -5,6 +5,7 @@ dev:
 	sleep 2
 	python manage.py migrate --settings=config.settings.dev
 	python manage.py create_admin --settings=config.settings.dev
+	python manage.py ensure_bucket --settings=config.settings.dev
 	python -m daphne -b 0.0.0.0 -p 8000 config.asgi:application &
 	celery -A config.celery worker -Q images,email,default -l info &
 	celery -A config.celery beat -l info

@@ -22,7 +22,7 @@ export const listingsApi = {
     api.get<PaginatedResponse<Listing>>(`/listings/?my=true&page=${page}`),
   uploadPhoto: (id: number, file: File) => {
     const fd = new FormData(); fd.append('image', file)
-    return api.post(`/listings/${id}/photos/`, fd, { headers: { 'Content-Type': 'multipart/form-data' } })
+    return api.post(`/listings/${id}/photos/`, fd)
   },
   deletePhoto: (listingId: number, photoId: number) =>
     api.delete(`/listings/${listingId}/photos/${photoId}/`),

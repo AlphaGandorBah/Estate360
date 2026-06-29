@@ -14,8 +14,6 @@ export const verificationApi = {
     fd.append('document_front', files.front)
     if (files.back) fd.append('document_back', files.back)
     fd.append('selfie', files.selfie)
-    return api.post<Verification>('/verification/', fd, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    })
+    return api.post<Verification>('/verification/', fd)
   },
 }

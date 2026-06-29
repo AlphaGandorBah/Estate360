@@ -1,4 +1,4 @@
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { authApi } from '@/api'
@@ -8,6 +8,7 @@ import { loginSchema, applyServerErrors, type LoginForm } from '@/lib/validation
 export default function LoginPage() {
   const { setAuth } = useAuthStore()
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
   const {
     register, handleSubmit, setError,
     formState: { errors, isSubmitting },
@@ -17,7 +18,9 @@ export default function LoginPage() {
     try {
       const { data } = await authApi.login(form)
       setAuth(data.access, data.user)
-      navigate('/dashboard')
+      // Return the user to wherever a 401 redirect sent them from, if any.
+      const next = searchParams.get('next')
+      navigate(next && next.startsWith('/') ? next : '/dashboard')
     } catch (err) {
       applyServerErrors(err, setError, 'Invalid credentials')
     }

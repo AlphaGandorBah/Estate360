@@ -44,6 +44,11 @@ class FraudReportSubmitView(IdempotencyMixin, APIView):
                 pass
 
         if data.get("reported_user_id"):
+            if str(data["reported_user_id"]) == str(request.user.id):
+                return Response(
+                    {"code": "self_report", "detail": "You can't report yourself."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
             from django.contrib.auth import get_user_model
             User = get_user_model()
             try:
@@ -142,11 +147,14 @@ class AdminReportDecisionView(IdempotencyMixin, APIView):
                 notes=f"Removed via fraud report #{report.pk}" + (f": {notes}" if notes else ""),
             )
         elif action == "warn":
+            warning_message = notes or "You've received a warning from our moderation team. Please review our community guidelines."
             create_notification(
                 user=warn_target,
                 notif_type=Notification.TYPE_MODERATION_WARNING,
-                payload={"report_id": report.pk, "message": notes or "You've received a warning from our moderation team. Please review our community guidelines."},
+                payload={"report_id": report.pk, "message": warning_message},
             )
+            from apps.messaging.utils import send_support_message
+            send_support_message(warn_target, request.user, warning_message)
             AdminActionLog.objects.create(
                 admin=request.user, action=AdminActionLog.ACTION_WARN_USER,
                 target_user=warn_target,

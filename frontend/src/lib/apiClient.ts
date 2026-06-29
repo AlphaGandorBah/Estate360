@@ -20,11 +20,12 @@ apiClient.interceptors.request.use((config) => {
   const access = useAuthStore.getState().access
   if (access) config.headers.Authorization = `Bearer ${access}`
 
-  const url = config.url ?? ''
-  if (url.includes('/auth/refresh') || url.includes('/auth/logout')) {
-    config.headers['X-Requested-With'] = 'estate360-web'
-  }
+  // Sent on every request (not just refresh/logout): browsers won't attach
+  // this cross-origin without a CORS preflight, which the backend rejects
+  // from unexpected origins — CSRF defense-in-depth alongside SameSite.
+  config.headers['X-Requested-With'] = 'estate360-web'
 
+  const url = config.url ?? ''
   const isIdempotent = IDEMPOTENT_URLS.some((u) => url.includes(u))
   const isWrite = ['post', 'put', 'patch', 'delete'].includes(config.method ?? '')
   if (isIdempotent && isWrite && !config.headers['Idempotency-Key']) {
@@ -56,7 +57,13 @@ async function endSession(err: unknown, fallbackMessage: string) {
     pushToast(appError.detail, 'error', appError.requestId)
     await sleep(1500)
   }
-  window.location.href = '/login'
+  // Preserve where the user was headed so login can return them there
+  // afterward, instead of always dropping them on the default landing page.
+  const current = window.location.pathname + window.location.search
+  const loginUrl = current && current !== '/' && !current.startsWith('/login')
+    ? `/login?next=${encodeURIComponent(current)}`
+    : '/login'
+  window.location.href = loginUrl
 }
 
 apiClient.interceptors.response.use(

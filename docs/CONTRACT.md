@@ -154,7 +154,9 @@ Sec-WebSocket-Protocol: bearer, <access_token>
 }
 ```
 
-Threshold: **0.45** cosine similarity. Below threshold → `intent: null` + generic fallback message.
+Threshold: **0.3** cosine similarity (tuned down from the original 0.45, which routed most real questions to fallback). Below threshold → `intent: null` + generic fallback message.
+
+**Deviation from brief:** the brief specifies a pure retrieval-based chatbot with no LLM calls. This implementation adds an optional local-LLM rewrite layer (`apps/chatbot/llm.py`, Qwen2.5-1.5B-Instruct via `llama-cpp-python`, no external API) on top of the TF-IDF retriever: the retriever still picks the intent/facts, but if the model is downloaded and loads successfully, its grounded, context-aware phrasing replaces the canned template reply. If the model is absent or fails to load, `generate_reply` returns `None` and the response falls back to the retriever's templated reply unchanged — so the contract's response shape (`intent`, `confidence`, `followups`) is unaffected either way. This was a deliberate, accepted tradeoff (free, local, no per-message cost) rather than an oversight.
 
 Rate limit: **20 requests / minute**.
 
@@ -165,7 +167,8 @@ Rate limit: **20 requests / minute**.
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
 | GET | `/recommendations` | Bearer (tenant) | Personalised listing recommendations. |
-| GET/PUT | `/preferences` | Bearer (tenant) | Get or update search preferences. |
+| GET | `/preferences/me` | Bearer (tenant) | Get current search preferences. |
+| PUT | `/preferences/set` | Bearer (tenant) | Replace search preferences. |
 
 ### Algorithm
 - TF-IDF over listing text + attributes
@@ -178,7 +181,7 @@ Rate limit: **20 requests / minute**.
 
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
-| GET | `/listings/saved` | Bearer (tenant) | List saved listings. |
+| GET | `/saved/` | Bearer (tenant) | List saved listings. |
 | POST | `/listings/{id}/save` | Bearer (tenant) | Save listing. Triggers recommender recompute (30s delay). |
 | DELETE | `/listings/{id}/save` | Bearer (tenant) | Unsave listing. |
 
@@ -193,7 +196,9 @@ Rate limit: **20 requests / minute**.
 | POST | `/admin/reports/{id}/resolve` | Bearer (admin) | Resolve or dismiss. `{"status":"resolved"|"dismissed","notes":"..."}` |
 
 ### Report reasons
-`fake_listing` · `misleading` · `scam` · `wrong_price` · `not_available` · `other`
+Listing reasons: `fake_listing` · `misleading` · `scam` · `wrong_price` · `not_available`
+User-conduct reasons (reporting a person directly, e.g. from a conversation): `harassment` · `abusive_behavior` · `non_payment` · `property_damage` · `unresponsive`
+Either kind: `other`
 
 ---
 
