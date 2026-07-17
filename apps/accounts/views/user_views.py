@@ -3,6 +3,7 @@ import uuid
 
 import structlog
 from django.conf import settings
+from django.utils import timezone
 from rest_framework import status
 from rest_framework.exceptions import ValidationError
 from rest_framework.parsers import MultiPartParser
@@ -11,8 +12,8 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from apps.accounts.models import User
-from apps.accounts.serializers import PublicUserSerializer, UserProfileSerializer
+from apps.accounts.models import AccountDeletionRequest, User
+from apps.accounts.serializers import AccountDeletionRequestSerializer, PublicUserSerializer, UserProfileSerializer
 from apps.common.clamav import scan_file
 from apps.common.storage import delete_file, upload_file
 from apps.common.throttles import ReadThrottle, UploadThrottle
@@ -36,14 +37,13 @@ class MeView(APIView):
         return Response(serializer.data)
 
     def delete(self, request: Request) -> Response:
-        user: User = request.user
-        # Hard-delete draft listings
-        user.listings.filter(status="draft").delete()
-        # Archive approved/pending listings
-        user.listings.filter(status__in=["approved", "pending"]).update(status="archived")
-        # Soft-delete the user
-        user.soft_delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        return Response(
+            {
+                "code": "deletion_not_allowed",
+                "detail": "Direct account deletion is disabled. Submit a deletion request via POST /users/me/request-deletion.",
+            },
+            status=status.HTTP_405_METHOD_NOT_ALLOWED,
+        )
 
 
 class AvatarUploadView(APIView):
@@ -99,3 +99,34 @@ class PublicUserView(APIView):
             return Response({"code": "not_found", "detail": "User not found."}, status=status.HTTP_404_NOT_FOUND)
         serializer = PublicUserSerializer(user)
         return Response(serializer.data)
+
+
+class RequestDeletionView(APIView):
+    """POST /users/me/request-deletion — submit a deletion request for admin approval."""
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request: Request) -> Response:
+        user: User = request.user
+        pending = AccountDeletionRequest.objects.filter(
+            user=user, status=AccountDeletionRequest.STATUS_PENDING
+        ).exists()
+        if pending:
+            return Response(
+                {"code": "request_exists", "detail": "You already have a pending deletion request."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        reason = request.data.get("reason", "")
+        req = AccountDeletionRequest.objects.create(user=user, reason=reason)
+        return Response(
+            AccountDeletionRequestSerializer(req).data,
+            status=status.HTTP_201_CREATED,
+        )
+
+    def get(self, request: Request) -> Response:
+        """GET /users/me/request-deletion — check if a pending request exists."""
+        req = AccountDeletionRequest.objects.filter(
+            user=request.user
+        ).order_by("-requested_at").first()
+        if not req:
+            return Response({"code": "not_found", "detail": "No deletion request found."}, status=status.HTTP_404_NOT_FOUND)
+        return Response(AccountDeletionRequestSerializer(req).data)

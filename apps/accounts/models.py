@@ -11,10 +11,13 @@ from .managers import UserManager
 class User(AbstractBaseUser, PermissionsMixin):
     ROLE_TENANT = "tenant"
     ROLE_LANDLORD = "landlord"
+    ROLE_AGENT = "agent"
     ROLE_ADMIN = "admin"
+    PROPERTY_PROVIDER_ROLES = (ROLE_LANDLORD, ROLE_AGENT)
     ROLE_CHOICES = [
         (ROLE_TENANT, "Tenant"),
         (ROLE_LANDLORD, "Landlord"),
+        (ROLE_AGENT, "Agent"),
         (ROLE_ADMIN, "Admin"),
     ]
 
@@ -100,6 +103,37 @@ class LandlordVerification(models.Model):
 
     def __str__(self) -> str:
         return f"Verification({self.user.email}, {self.status})"
+
+
+class AccountDeletionRequest(models.Model):
+    STATUS_PENDING = "pending"
+    STATUS_APPROVED = "approved"
+    STATUS_REJECTED = "rejected"
+    STATUS_CHOICES = [
+        (STATUS_PENDING, "Pending"),
+        (STATUS_APPROVED, "Approved"),
+        (STATUS_REJECTED, "Rejected"),
+    ]
+
+    user = models.ForeignKey(
+        User, on_delete=models.CASCADE, related_name="deletion_requests"
+    )
+    reason = models.TextField(blank=True)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default=STATUS_PENDING)
+    requested_at = models.DateTimeField(auto_now_add=True)
+    resolved_at = models.DateTimeField(null=True, blank=True)
+    resolved_by = models.ForeignKey(
+        User, null=True, blank=True, on_delete=models.SET_NULL,
+        related_name="deletion_request_resolutions",
+    )
+    resolution_notes = models.TextField(blank=True)
+
+    class Meta:
+        ordering = ["-requested_at"]
+        indexes = [models.Index(fields=["status"], name="accounts_de_status_idx")]
+
+    def __str__(self) -> str:
+        return f"DeletionRequest({self.user.email}, {self.status})"
 
 
 class EmailOTP(models.Model):

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query'
 import { v4 as uuid } from 'uuid'
@@ -13,6 +13,8 @@ import Avatar from '@/components/common/Avatar'
 import ReportModal from '@/components/common/ReportModal'
 import type { Message, ReportReason } from '@/types'
 
+const EMPTY_MESSAGES: Message[] = []
+
 export default function ConversationDetailPage() {
   const { id } = useParams<{ id: string }>()
   const convId = Number(id)
@@ -21,7 +23,7 @@ export default function ConversationDetailPage() {
   const qc = useQueryClient()
   const [text, setText] = useState('')
   const bottomRef = useRef<HTMLDivElement>(null)
-  const [localMsgs, setLocalMsgs] = useState<Message[]>([])
+  const [liveMsgsByConversation, setLiveMsgsByConversation] = useState<Record<number, Message[]>>({})
   const [showReport, setShowReport] = useState(false)
 
   const { data: conv } = useQuery({
@@ -35,9 +37,32 @@ export default function ConversationDetailPage() {
     refetchInterval: false,
   })
 
-  useEffect(() => {
-    if (msgRes?.results) setLocalMsgs([...msgRes.results].reverse())
-  }, [msgRes])
+  const messageResults = msgRes?.results
+  const serverMsgs = useMemo(
+    () => messageResults ? [...messageResults].reverse() : EMPTY_MESSAGES,
+    [messageResults],
+  )
+  const liveMsgs = liveMsgsByConversation[convId] ?? EMPTY_MESSAGES
+  const localMsgs = useMemo(() => {
+    const merged = [...serverMsgs]
+    for (const message of liveMsgs) {
+      const existingIndex = merged.findIndex((candidate) => (
+        message.client_key
+          ? candidate.client_key === message.client_key
+          : candidate.id === message.id
+      ))
+      if (existingIndex === -1) merged.push(message)
+      else merged[existingIndex] = message
+    }
+    return merged
+  }, [liveMsgs, serverMsgs])
+
+  const updateLiveMsgs = useCallback((update: (messages: Message[]) => Message[]) => {
+    setLiveMsgsByConversation((current) => ({
+      ...current,
+      [convId]: update(current[convId] ?? EMPTY_MESSAGES),
+    }))
+  }, [convId])
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -54,7 +79,7 @@ export default function ConversationDetailPage() {
         read_at: null,
         created_at: data.created_at as string,
       }
-      setLocalMsgs((prev) => {
+      updateLiveMsgs((prev) => {
         // Reconcile with the optimistic message we already rendered on send,
         // matched by client_key, instead of appending a duplicate.
         const idx = msg.client_key ? prev.findIndex((m) => m.client_key === msg.client_key) : -1
@@ -69,7 +94,7 @@ export default function ConversationDetailPage() {
     } else if (data.type === 'error') {
       pushToast((data.detail as string) ?? 'Something went wrong.', 'error')
     }
-  }, [qc])
+  }, [qc, updateLiveMsgs])
 
   useWebSocket(`/ws/conversations/${convId}/`, { onMessage }, !!access)
 
@@ -82,7 +107,7 @@ export default function ConversationDetailPage() {
 
     // Show the message immediately rather than waiting on the WS echo —
     // reconciled against the real row (same client_key) once it arrives.
-    setLocalMsgs((prev) => [...prev, {
+    updateLiveMsgs((prev) => [...prev, {
       id: -Date.now(),
       sender_id: user?.id ?? '',
       sender_name: '',
@@ -98,7 +123,7 @@ export default function ConversationDetailPage() {
       // apiClient's interceptor already toasts the server's error message
       // (e.g. a restriction 403) — drop the optimistic bubble and give the
       // user their draft back.
-      setLocalMsgs((prev) => prev.filter((m) => m.client_key !== clientKey))
+      updateLiveMsgs((prev) => prev.filter((m) => m.client_key !== clientKey))
       setText(body)
     }
   }
@@ -106,11 +131,15 @@ export default function ConversationDetailPage() {
   const otherName = (conv
     ? (conv.is_support
         ? (user?.role === 'admin' ? conv.initiator_name : 'Admin Support')
-        : (user?.id === conv.initiator_id ? conv.landlord_name : conv.initiator_name))
+        : (user?.id === conv.initiator_id
+            ? (conv.provider_name ?? conv.landlord_name)
+            : conv.initiator_name))
     : '…') ?? '…'
 
   const otherUserId = conv && !conv.is_support
-    ? (user?.id === conv.initiator_id ? conv.landlord_id : conv.initiator_id)
+    ? (user?.id === conv.initiator_id
+        ? (conv.provider_id ?? conv.landlord_id ?? null)
+        : conv.initiator_id)
     : null
 
   const reportMut = useMutation({

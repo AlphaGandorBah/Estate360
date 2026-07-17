@@ -3,8 +3,20 @@
 @tailwind utilities;
 
 @layer base {
+  :root {
+    color-scheme: light;
+  }
+
   body {
-    @apply bg-[#e2e4e8] text-gray-900 dark:bg-gray-950 dark:text-gray-100;
+    @apply min-h-screen bg-[#f3f5f7] text-gray-900 antialiased dark:bg-gray-950 dark:text-gray-100;
+  }
+
+  #root {
+    @apply min-h-screen;
+  }
+
+  ::selection {
+    @apply bg-emerald-200 text-emerald-900;
   }
 }
 

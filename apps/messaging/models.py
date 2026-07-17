@@ -1,14 +1,13 @@
 """Conversation and Message models."""
-import uuid
 
 from django.conf import settings
 from django.db import models
 
 
 class Conversation(models.Model):
-    # The tenant or landlord who started the thread. For a landlord
-    # conversation this is always the tenant (only tenants can start those);
-    # for a support conversation it's whichever of the two reached out.
+    # The user who started the thread. For a property enquiry this is always
+    # the tenant (only tenants can start those); for a support conversation
+    # it is whichever public account reached out.
     initiator = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
@@ -16,6 +15,9 @@ class Conversation(models.Model):
     )
     # Null for support conversations, which aren't tied to one specific
     # admin — any admin can see and reply to them (a shared inbox).
+    # This legacy field name is retained for database/API compatibility. It
+    # stores the listing contact, which may be either a landlord or an agent;
+    # provider_* are the preferred neutral names in API responses.
     landlord = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         null=True,
@@ -43,6 +45,20 @@ class Conversation(models.Model):
                 fields=["initiator"],
                 condition=models.Q(is_support=True),
                 name="unique_support_conversation_per_initiator",
+            ),
+            # SQL unique constraints treat NULL values as distinct, so the
+            # legacy unique_together above does not protect general enquiries
+            # whose listing is null. Keep one listing-less thread per tenant
+            # and property provider, while leaving listing-specific threads
+            # and support conversations unchanged.
+            models.UniqueConstraint(
+                fields=["initiator", "landlord"],
+                condition=models.Q(
+                    is_support=False,
+                    listing__isnull=True,
+                    landlord__isnull=False,
+                ),
+                name="unique_general_conversation_per_provider",
             ),
         ]
         indexes = [

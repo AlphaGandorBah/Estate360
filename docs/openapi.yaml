@@ -386,7 +386,7 @@ paths:
   /api/v1/listings/:
     get:
       operationId: listings_retrieve
-      description: GET /listings  (public) — POST /listings  (verified landlord).
+      description: GET /listings (public) — POST /listings (verified landlord or agent).
       tags:
       - listings
       security:
@@ -397,7 +397,7 @@ paths:
           description: No response body
     post:
       operationId: listings_create
-      description: GET /listings  (public) — POST /listings  (verified landlord).
+      description: GET /listings (public) — POST /listings (verified landlord or agent).
       tags:
       - listings
       security:

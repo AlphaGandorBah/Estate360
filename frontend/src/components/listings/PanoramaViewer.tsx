@@ -22,12 +22,64 @@ declare global {
 
 interface Props { panorama: Panorama | undefined; className?: string }
 
+interface ViewerInstanceProps {
+  autoLoad: boolean
+  status: Panorama['status'] | undefined
+  previewUrl: string | null | undefined
+  width: number | null | undefined
+  height: number | null | undefined
+  roomLabel: string | undefined
+  className?: string
+}
+
 type LoadState = 'idle' | 'loading' | 'ready' | 'error'
 
+function canUseDeviceOrientation(): boolean {
+  // Motion sensors are restricted to secure contexts in modern mobile
+  // browsers. Pannellum 2.5.7 accesses these globals without first checking
+  // that they exist, so enabling orientation on a LAN HTTP origin can abort
+  // the entire viewer before the panorama is rendered.
+  return window.isSecureContext
+    && 'DeviceMotionEvent' in window
+    && 'DeviceOrientationEvent' in window
+}
+
 export default function PanoramaViewer({ panorama, className }: Props) {
+  const autoLoad = !isSaveDataEnabled()
+  const viewerKey = [
+    panorama?.id ?? 'none',
+    panorama?.status ?? 'none',
+    panorama?.preview_url ?? 'none',
+    panorama?.width ?? 'none',
+    panorama?.height ?? 'none',
+    autoLoad ? 'auto' : 'manual',
+  ].join('|')
+
+  return (
+    <PanoramaViewerInstance
+      key={viewerKey}
+      autoLoad={autoLoad}
+      status={panorama?.status}
+      previewUrl={panorama?.preview_url}
+      width={panorama?.width}
+      height={panorama?.height}
+      roomLabel={panorama?.room_label}
+      className={className}
+    />
+  )
+}
+
+function PanoramaViewerInstance({
+  autoLoad,
+  status,
+  previewUrl,
+  width,
+  height,
+  roomLabel,
+  className,
+}: ViewerInstanceProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const viewerRef = useRef<PannellumViewer | null>(null)
-  const autoLoad = !isSaveDataEnabled()
   const [state, setState] = useState<LoadState>(autoLoad ? 'loading' : 'idle')
   const [showHint, setShowHint] = useState(true)
   const [isRotating, setIsRotating] = useState(
@@ -36,10 +88,7 @@ export default function PanoramaViewer({ panorama, className }: Props) {
 
   useEffect(() => {
     let cancelled = false
-    setState(autoLoad ? 'loading' : 'idle')
-    setShowHint(true)
     const prefersReducedMotionAtMount = window.matchMedia('(prefers-reduced-motion: reduce)').matches
-    setIsRotating(!prefersReducedMotionAtMount)
 
     // Pannellum can fail on a malformed image deep inside an async image
     // decode callback, outside the try/catch below and without firing its
@@ -55,7 +104,7 @@ export default function PanoramaViewer({ panorama, className }: Props) {
     window.addEventListener('error', onWindowError)
 
     async function mount() {
-      if (!panorama || panorama.status !== 'ready' || !panorama.preview_url || !containerRef.current) return
+      if (status !== 'ready' || !previewUrl || !containerRef.current) return
 
       // pannellum's build is a plain global-attaching script (no ESM/CJS
       // exports) — importing it for its side effect populates window.pannellum.
@@ -74,7 +123,6 @@ export default function PanoramaViewer({ panorama, className }: Props) {
       // wide sweep-panorama (e.g. ~6:1) that only covers a much narrower vertical slice.
       // Telling it the real vaov (derived from the actual aspect ratio) keeps the
       // horizon flat instead of bowing it into the barrel-distortion "frown" shape.
-      const { width, height } = panorama
       const vaov = width && height ? Math.min(360 * (height / width), 180) : 180
       // A narrow vaov (a ~6:1 sweep panorama, say 57°) covers less vertical angle than a
       // 100° hfov spans on most viewport aspect ratios — so the default zoom level alone
@@ -85,7 +133,7 @@ export default function PanoramaViewer({ panorama, className }: Props) {
       try {
         const viewer = window.pannellum.viewer(containerRef.current, {
           type: 'equirectangular',
-          panorama: panorama.preview_url,
+          panorama: previewUrl,
           autoLoad,
           autoRotate: prefersReducedMotionAtMount ? 0 : -2,
           compass: true,
@@ -100,9 +148,19 @@ export default function PanoramaViewer({ panorama, className }: Props) {
           // broken rather than just narrower than a full sphere.
           minPitch: -vaov / 2,
           maxPitch: vaov / 2,
-          orientationOnByDefault: true,
+          // Keep orientation opt-in. iOS requires the permission request to
+          // happen from a direct user gesture, and LAN development runs over
+          // HTTP where the motion APIs are unavailable altogether.
+          orientationOnByDefault: false,
         })
         viewerRef.current = viewer
+
+        if (!canUseDeviceOrientation()) {
+          containerRef.current
+            .querySelector<HTMLElement>('.pnlm-orientation-button')
+            ?.remove()
+        }
+
         viewer.on('load', () => { if (!cancelled) setState('ready') })
         viewer.on('error', () => { if (!cancelled) setState('error') })
         const dismissHint = () => { if (!cancelled) setShowHint(false) }
@@ -123,9 +181,9 @@ export default function PanoramaViewer({ panorama, className }: Props) {
       viewerRef.current?.destroy()
       viewerRef.current = null
     }
-  }, [panorama])
+  }, [autoLoad, height, previewUrl, status, width])
 
-  if (!panorama || panorama.status !== 'ready' || !panorama.preview_url) {
+  if (status !== 'ready' || !previewUrl) {
     return (
       <div className={`flex items-center justify-center bg-gray-100 text-gray-400 dark:bg-gray-800 dark:text-gray-500 ${className ?? 'h-72 rounded-2xl md:h-96 lg:h-[32rem]'}`}>
         No images
@@ -150,9 +208,9 @@ export default function PanoramaViewer({ panorama, className }: Props) {
         </div>
       )}
 
-      {state === 'ready' && panorama.room_label && (
+      {state === 'ready' && roomLabel && (
         <span className="pointer-events-none absolute left-3 top-3 rounded-full bg-black/60 px-3 py-1 text-xs font-medium text-white">
-          {panorama.room_label}
+          {roomLabel}
         </span>
       )}
 

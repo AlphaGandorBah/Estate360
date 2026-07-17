@@ -18,7 +18,7 @@ the model file present.
 import os
 import threading
 from pathlib import Path
-from typing import Optional, TypedDict
+from typing import TypedDict
 
 import structlog
 
@@ -40,7 +40,7 @@ class HistoryTurn(TypedDict):
 
 SYSTEM_PROMPT_HEADER = (
     "You are the Estate360 assistant, a help bot for a real-estate rental "
-    "platform in Freetown, Sierra Leone, used by tenants, landlords, and "
+    "platform in Freetown, Sierra Leone, used by tenants, landlords, agents, and "
     "admins. Answer briefly (2-4 sentences), in plain friendly English, and "
     "only using the facts below. If something isn't covered by them, say "
     "you're not sure and suggest the search bar or 'Contact Support' — "
@@ -53,7 +53,7 @@ _load_failed = False
 _llm_lock = threading.Lock()
 
 
-def _resolve_model_path() -> Optional[Path]:
+def _resolve_model_path() -> Path | None:
     configured = os.environ.get("CHATBOT_MODEL_PATH")
     if configured:
         return Path(configured) if Path(configured).exists() else None
@@ -103,9 +103,9 @@ class ListingQuery(TypedDict):
 def generate_reply(
     message: str,
     knowledge_text: str,
-    listing_query: Optional[ListingQuery] = None,
-    history: Optional[list[HistoryTurn]] = None,
-) -> Optional[str]:
+    listing_query: ListingQuery | None = None,
+    history: list[HistoryTurn] | None = None,
+) -> str | None:
     """Returns a generated, fact-grounded reply, or None if the local model
     isn't available or generation fails — caller should fall back to the
     retriever's canned reply in that case.

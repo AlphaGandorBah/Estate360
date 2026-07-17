@@ -17,8 +17,9 @@ examples:
   - "what can I ask you"
   - "what kind of questions can you answer"
 responses:
-  - "Hi! I'm the Estate360 assistant. I can help with finding listings, saving favourites, messaging landlords, landlord verification, reporting fraud, account settings, and how pricing works. What do you need?"
+  - "Hi! I'm the Estate360 assistant. I can help with finding listings, saving favourites, contacting landlords or agents, identity verification, reporting fraud, account settings, and how pricing works. What do you need?"
 followups:
   - "Show me listings in Aberdeen"
   - "How does verification work?"
   - "How do I message a landlord?"
+  - "How do agents list properties?"

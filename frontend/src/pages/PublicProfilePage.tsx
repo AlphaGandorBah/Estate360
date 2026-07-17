@@ -47,7 +47,7 @@ export default function PublicProfilePage() {
               )}
             </div>
             <div className="mt-0.5 text-sm text-gray-500 dark:text-gray-400">
-              Member since {profile.joined_year}
+              <span className="capitalize">{profile.role}</span> · Member since {profile.joined_year}
             </div>
             <div className="mt-0.5 text-xs text-gray-400 dark:text-gray-500">
               {profile.listings_count} listing{profile.listings_count !== 1 ? 's' : ''}

@@ -1,0 +1,20 @@
+FROM node:22-alpine AS frontend-builder
+
+WORKDIR /build/frontend
+
+COPY frontend/package.json frontend/package-lock.json ./
+# The current lockfile intentionally pairs TypeScript 6 with a type-generator
+# whose peer range has not caught up yet. The application build is compatible;
+# retain the locked dependency tree instead of letting npm re-resolve it.
+RUN --mount=type=cache,target=/root/.npm \
+    npm ci --legacy-peer-deps --prefer-offline --no-audit --no-fund
+
+COPY frontend/ ./
+RUN npm run build
+
+FROM caddy:2-alpine
+
+COPY Caddyfile /etc/caddy/Caddyfile
+COPY --from=frontend-builder /build/frontend/dist /srv
+
+EXPOSE 80 443 9443

@@ -31,7 +31,7 @@ export default function LocationMap({ lat, lng, area }: Props) {
         </MapContainer>
       </div>
       <p className="mt-1.5 text-xs text-gray-500 dark:text-gray-400">
-        Approximate location — exact address is shared once you contact the landlord.
+        Approximate location — the exact address is shared after you contact the listing provider.
       </p>
     </div>
   )

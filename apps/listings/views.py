@@ -1,7 +1,6 @@
 """Listing views: CRUD, submit, admin decision, saved, preferences."""
 import structlog
 from django.utils import timezone
-from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import status
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.request import Request
@@ -11,7 +10,12 @@ from rest_framework.views import APIView
 from apps.accounts.models import User
 from apps.common.idempotency import IdempotencyMixin
 from apps.common.pagination import StandardPagination
-from apps.common.permissions import IsAdminRole, IsOwnerOrReadOnly, IsTenant, IsVerifiedLandlord
+from apps.common.permissions import (
+    IsAdminRole,
+    IsOwnerOrReadOnly,
+    IsTenant,
+    IsVerifiedPropertyProvider,
+)
 from apps.common.throttles import ReadThrottle
 
 from .filters import ListingFilter
@@ -20,7 +24,6 @@ from .models import (
     ListingAdminView,
     ListingStatus,
     SavedListing,
-    SearchPreference,
     UserInteraction,
 )
 from .serializers import (
@@ -29,7 +32,6 @@ from .serializers import (
     ListingReadSerializer,
     ListingWriteSerializer,
     SavedListingSerializer,
-    SearchPreferenceSerializer,
 )
 from .tasks import send_listing_decision_email, update_search_vector
 
@@ -37,12 +39,12 @@ logger = structlog.get_logger(__name__)
 
 
 class ListingListCreateView(IdempotencyMixin, APIView):
-    """GET /listings  (public) — POST /listings  (verified landlord)."""
+    """GET /listings (public) — POST /listings (verified provider)."""
 
     def get_permissions(self):
         if self.request.method == "GET":
             return [AllowAny()]
-        return [IsVerifiedLandlord()]
+        return [IsVerifiedPropertyProvider()]
 
     def get_throttles(self):
         if self.request.method == "GET":
@@ -108,13 +110,25 @@ class ListingDetailView(APIView):
         if not listing or listing.status == ListingStatus.ARCHIVED:
             return Response({"code": "not_found", "detail": "Not found."}, status=status.HTTP_404_NOT_FOUND)
 
+        can_view_unpublished = (
+            request.user.is_authenticated
+            and (request.user == listing.owner or request.user.role == User.ROLE_ADMIN)
+        )
+        if listing.status != ListingStatus.APPROVED and not can_view_unpublished:
+            # Conceal drafts, rejected listings, and moderation-pending content
+            # from anyone except its owner and administrators.
+            return Response(
+                {"code": "not_found", "detail": "Not found."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
         if request.user.is_authenticated:
             if request.user.role == User.ROLE_ADMIN:
                 # Moderation view, not a tenant interest signal — tracked
                 # separately so it never feeds the recommender, and so the
                 # admin decision endpoint can require it happened first.
                 ListingAdminView.objects.get_or_create(listing=listing, admin=request.user)
-            else:
+            elif request.user.role == User.ROLE_TENANT:
                 # Log view interaction (deduplicated per user per 24h)
                 cutoff = timezone.now() - timezone.timedelta(hours=24)
                 if not UserInteraction.objects.filter(
@@ -156,9 +170,18 @@ class ListingDetailView(APIView):
 class ListingSubmitView(IdempotencyMixin, APIView):
     """POST /listings/{id}/submit"""
 
-    permission_classes = [IsVerifiedLandlord]
+    permission_classes = [IsVerifiedPropertyProvider]
 
     def post(self, request: Request, pk: int) -> Response:
+        if request.user.is_restricted:
+            return Response(
+                {
+                    "code": "restricted",
+                    "detail": "Your account is restricted from submitting listings.",
+                },
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
         short_circuit = self.enforce_idempotency(request)
         if short_circuit is not None:
             return short_circuit

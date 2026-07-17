@@ -2,6 +2,7 @@ intent: messaging_policy
 examples:
   - "is messaging free"
   - "does it cost money to message a landlord"
+  - "does it cost money to message an agent"
   - "why can't I send a message"
   - "I can't message anyone"
   - "messaging is not working for me"
@@ -12,4 +13,4 @@ responses:
   - "Messaging is completely free. If sending fails, the most common reason is that your account has been restricted from messaging by an admin — usually after a report. You'll see an error explaining that when you try to send. Restrictions block all messaging, including to support, so there's no in-app way to appeal it directly right now — restricted accounts are periodically reassessed."
 followups:
   - "Why is my account restricted?"
-  - "How do I message a landlord?"
+  - "How do I contact a listing provider?"

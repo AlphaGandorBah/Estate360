@@ -41,7 +41,7 @@ export default function AdminVerificationsPage() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Landlord verifications</h1>
+      <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Identity verifications</h1>
 
       <div className="mt-4 flex gap-2 border-b border-gray-200 dark:border-gray-700">
         {STATUS_TABS.map((s) => (
@@ -73,6 +73,11 @@ export default function AdminVerificationsPage() {
                 <div>
                   <div className="font-medium text-gray-900 dark:text-gray-100">
                     {v.user_name}
+                    {v.user_role && (
+                      <span className="ml-2 rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium capitalize text-gray-700 dark:bg-gray-700 dark:text-gray-300">
+                        {v.user_role}
+                      </span>
+                    )}
                   </div>
                   <div className="mt-0.5 text-sm text-gray-500 dark:text-gray-400">
                     {v.document_type.replace(/_/g, ' ')} · Submitted {formatDate(v.submitted_at)}
@@ -142,11 +147,11 @@ export default function AdminVerificationsPage() {
       )}
 
       {rejectId !== null && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm">
           <div className="w-full max-w-md rounded-2xl bg-white p-6 dark:bg-gray-800">
             <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Reject verification</h2>
             <textarea value={rejectNote} onChange={(e) => setRejectNote(e.target.value)}
-              placeholder="Reason for rejection (shown to landlord)…" rows={4}
+              placeholder="Reason for rejection (shown to the user)…" rows={4}
               className="mt-4 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100" />
             <div className="mt-4 flex gap-3">
               <button onClick={() => setRejectId(null)}

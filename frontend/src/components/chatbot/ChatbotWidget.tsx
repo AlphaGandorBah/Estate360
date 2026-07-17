@@ -33,9 +33,10 @@ export default function ChatbotWidget() {
   const [msgs, setMsgs] = useState<Msg[]>(loadSession)
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
-  const [throttledUntil, setThrottledUntil] = useState<number | null>(null)
+  const [isThrottled, setIsThrottled] = useState(false)
   const bottomRef = useRef<HTMLDivElement>(null)
-  const lastSendRef = useRef(0)
+  const sendDebounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const throttleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: 'smooth' }) }, [msgs])
 
@@ -47,13 +48,19 @@ export default function ChatbotWidget() {
     sessionStorage.setItem(STORAGE_KEY, JSON.stringify(msgs))
   }, [msgs])
 
+  useEffect(() => () => {
+    if (sendDebounceTimerRef.current) clearTimeout(sendDebounceTimerRef.current)
+    if (throttleTimerRef.current) clearTimeout(throttleTimerRef.current)
+  }, [])
+
   const send = async (text: string) => {
     const trimmed = text.trim()
     if (!trimmed || loading) return
-    const now = Date.now()
-    if (now - lastSendRef.current < SEND_DEBOUNCE_MS) return
-    lastSendRef.current = now
-    if (throttledUntil && now < throttledUntil) return
+    if (sendDebounceTimerRef.current) return
+    sendDebounceTimerRef.current = setTimeout(() => {
+      sendDebounceTimerRef.current = null
+    }, SEND_DEBOUNCE_MS)
+    if (isThrottled) return
 
     // Built from state as of this send, before the new message is appended —
     // without this, every message is answered in isolation and "what about
@@ -72,7 +79,12 @@ export default function ChatbotWidget() {
       const status = (err as { response?: { status?: number; headers?: Record<string, string> } })?.response?.status
       if (status === 429) {
         const retryAfter = Number((err as { response?: { headers?: Record<string, string> } })?.response?.headers?.['retry-after']) || 30
-        setThrottledUntil(Date.now() + retryAfter * 1000)
+        setIsThrottled(true)
+        if (throttleTimerRef.current) clearTimeout(throttleTimerRef.current)
+        throttleTimerRef.current = setTimeout(() => {
+          setIsThrottled(false)
+          throttleTimerRef.current = null
+        }, retryAfter * 1000)
         setMsgs((m) => [...m, { role: 'bot', text: `I'm getting a lot of questions right now — try again in about ${retryAfter}s.` }])
       } else {
         setMsgs((m) => [...m, { role: 'bot', text: 'Sorry, something went wrong. Please try again.' }])
@@ -160,11 +172,11 @@ export default function ChatbotWidget() {
             className="flex gap-2 border-t border-gray-200 p-3 dark:border-gray-700">
             <input
               value={input} onChange={(e) => setInput(e.target.value)}
-              placeholder={throttledUntil && Date.now() < throttledUntil ? 'Please wait…' : 'Ask something…'}
-              disabled={!!throttledUntil && Date.now() < throttledUntil}
+              placeholder={isThrottled ? 'Please wait…' : 'Ask something…'}
+              disabled={isThrottled}
               className="flex-1 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:border-emerald-400 disabled:opacity-50 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
             />
-            <button type="submit" disabled={loading || (!!throttledUntil && Date.now() < throttledUntil)}
+            <button type="submit" disabled={loading || isThrottled}
               className="rounded-lg bg-emerald-600 px-3 py-2 text-sm font-medium text-white hover:bg-emerald-700 disabled:opacity-50">
               Send
             </button>

@@ -92,20 +92,20 @@ class TestFraudReportSubmit:
 @pytest.mark.django_db
 class TestAdminReportList:
     def test_admin_sees_open_reports(self, admin_client, open_report):
-        resp = admin_client.get("/api/v1/admin/reports")
+        resp = admin_client.get("/api/v1/admin/reports/")
         assert resp.status_code == 200
         ids = [r["id"] for r in resp.data["results"]]
         assert open_report.pk in ids
 
     def test_non_admin_cannot_view(self, tenant_client):
-        resp = tenant_client.get("/api/v1/admin/reports")
+        resp = tenant_client.get("/api/v1/admin/reports/")
         assert resp.status_code == 403
 
     def test_resolved_reports_not_in_list(self, admin_client, open_report):
         from apps.moderation.models import FraudReport
         open_report.status = FraudReport.STATUS_RESOLVED
         open_report.save()
-        resp = admin_client.get("/api/v1/admin/reports")
+        resp = admin_client.get("/api/v1/admin/reports/")
         ids = [r["id"] for r in resp.data["results"]]
         assert open_report.pk not in ids
 
@@ -188,9 +188,9 @@ class TestAdminReportDecision:
         assert resp.data["code"] == "no_listing"
 
     def test_warn_action_notifies_reported_user(self, admin_client, admin_user, tenant_user, verified_landlord):
+        from apps.common.models import AdminActionLog
         from apps.moderation.models import FraudReport
         from apps.notifications.models import Notification
-        from apps.common.models import AdminActionLog
         report = FraudReport.objects.create(
             reporter=tenant_user, reported_user=verified_landlord,
             reason="scam", description="Scammed me in chat.",

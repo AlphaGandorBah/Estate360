@@ -4,8 +4,8 @@ import type { Conversation, Message, PaginatedResponse } from '@/types'
 export const messagingApi = {
   conversations: (page = 1) => api.get<PaginatedResponse<Conversation>>(`/conversations/?page=${page}`),
   list: (page = 1) => api.get<PaginatedResponse<Conversation>>(`/conversations/?page=${page}`),
-  startConversation: (d: { landlord_id: string; listing_id?: number; initial_message?: string }) =>
-    api.post<Conversation>('/conversations/', d),
+  startConversation: (d: { provider_id: string; listing_id?: number; initial_message?: string }) =>
+    api.post<Conversation>('/conversations/', { ...d, landlord_id: d.provider_id }),
   startSupportConversation: (d: { initial_message?: string } = {}) =>
     api.post<Conversation>('/conversations/', { support: true, ...d }),
   create: (d: { listing: number }) =>

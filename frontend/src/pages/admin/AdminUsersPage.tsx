@@ -9,7 +9,7 @@ import type { Role, User } from '@/types'
 
 type FilterRole = 'all' | Role
 
-const ROLE_TABS: FilterRole[] = ['all', 'tenant', 'landlord', 'admin']
+const ROLE_TABS: FilterRole[] = ['all', 'tenant', 'landlord', 'agent', 'admin']
 
 export default function AdminUsersPage() {
   const [role, setRole] = useState<FilterRole>('all')

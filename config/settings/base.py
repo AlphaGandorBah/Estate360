@@ -9,6 +9,15 @@ BASE_DIR = Path(__file__).resolve().parent.parent.parent
 SECRET_KEY = config("SECRET_KEY")
 ALLOWED_HOSTS = config("ALLOWED_HOSTS", cast=Csv(), default="localhost,127.0.0.1")
 
+# Django only treats X-Forwarded-* headers as authoritative when the deployment
+# explicitly opts in.  The bundled HTTPS reverse proxy sets these headers, but
+# a directly exposed development server must not trust values supplied by an
+# arbitrary client.
+TRUST_PROXY_HEADERS = config("TRUST_PROXY_HEADERS", cast=bool, default=False)
+if TRUST_PROXY_HEADERS:
+    SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+    USE_X_FORWARDED_HOST = True
+
 DJANGO_APPS = [
     "daphne",
     "django.contrib.admin",
@@ -196,6 +205,11 @@ SIMPLE_JWT = {
 # Refresh cookie settings
 JWT_REFRESH_COOKIE_NAME = "refresh"
 JWT_REFRESH_COOKIE_MAX_AGE = 7 * 24 * 60 * 60  # 7 days
+# Local HTTPS can run with Django's DEBUG setting enabled, so cookie security
+# must follow the transport configuration instead of DEBUG alone.
+JWT_REFRESH_COOKIE_SECURE = config(
+    "JWT_REFRESH_COOKIE_SECURE", cast=bool, default=False
+)
 
 # ─── drf-spectacular ──────────────────────────────────────────────────────────
 SPECTACULAR_SETTINGS = {
@@ -212,10 +226,21 @@ SPECTACULAR_SETTINGS = {
 CORS_ALLOWED_ORIGINS = config(
     "CORS_ALLOWED_ORIGINS",
     cast=Csv(),
-    default="http://localhost:5173",
+    default="http://localhost:5173,https://localhost",
 )
 CORS_ALLOW_CREDENTIALS = True
 CORS_EXPOSE_HEADERS = ["X-Request-ID"]
+
+# ─── CSRF ─────────────────────────────────────────────────────────────────────
+CSRF_TRUSTED_ORIGINS = config(
+    "CSRF_TRUSTED_ORIGINS",
+    cast=Csv(),
+    default=(
+        "http://localhost:5173,"
+        "http://127.0.0.1:5173,"
+        "https://localhost"
+    ),
+)
 
 # ─── S3 / Object Storage ──────────────────────────────────────────────────────
 MEDIA_S3_ENDPOINT = config("MEDIA_S3_ENDPOINT", default="http://localhost:9000")
@@ -223,7 +248,9 @@ MEDIA_S3_ACCESS_KEY = config("MEDIA_S3_ACCESS_KEY", default="minioadmin")
 MEDIA_S3_SECRET_KEY = config("MEDIA_S3_SECRET_KEY", default="minioadmin")
 MEDIA_S3_BUCKET = config("MEDIA_S3_BUCKET", default="estate360")
 MEDIA_S3_REGION = config("MEDIA_S3_REGION", default="us-east-1")
-MEDIA_HOST = config("MEDIA_HOST", default="http://localhost:9000")
+# Browser-reachable endpoint used when signing media URLs. This may differ
+# from MEDIA_S3_ENDPOINT when the app talks to MinIO over a Docker hostname.
+MEDIA_HOST = config("MEDIA_HOST", default=MEDIA_S3_ENDPOINT)
 
 # Presigned URL expiry (seconds)
 PRESIGNED_URL_EXPIRY = 86400  # 24 hours
@@ -256,14 +283,13 @@ IDEMPOTENCY_KEY_TTL_SECONDS = 86400  # 24 hours
 # or three 8 MB verification documents in one request) or every real-world
 # upload trips Django's RequestDataTooBig before the view's own size checks
 # ever run.
-DATA_UPLOAD_MAX_MEMORY_SIZE = 30 * 1024 * 1024  # 30 MB
+DATA_UPLOAD_MAX_MEMORY_SIZE = 55 * 1024 * 1024  # 55 MB — headroom above the 50 MB panorama limit
 
 # ─── Panorama ─────────────────────────────────────────────────────────────────
-PANORAMA_MAX_SIZE_BYTES = 25 * 1024 * 1024  # 25 MB
-PANORAMA_MIN_WIDTH = 4000
-PANORAMA_MIN_HEIGHT_EQUIRECT = 2000
-PANORAMA_MIN_HEIGHT_CYLINDRICAL = 1000
-PANORAMA_MAX_LONG_EDGE = 8192
+PANORAMA_MAX_SIZE_BYTES = 50 * 1024 * 1024  # 50 MB — high-res phone panoramas can exceed 25 MB
+PANORAMA_MIN_WIDTH = 1500               # floor for any recognisable panorama; phones easily exceed this
+PANORAMA_MIN_ASPECT_RATIO = 1.9         # reject ordinary 4:3 and 16:9 flat photos
+PANORAMA_MAX_LONG_EDGE = 15000          # raised for pro-app / DSLR stitched panoramas
 PANORAMA_ORIGINAL_RETENTION_DAYS = 30
 
 # ─── Verification docs ────────────────────────────────────────────────────────

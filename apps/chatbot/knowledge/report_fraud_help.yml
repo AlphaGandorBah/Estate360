@@ -5,12 +5,14 @@ examples:
   - "this listing is fake"
   - "how to report a scam"
   - "suspicious landlord"
+  - "suspicious agent"
   - "report a fraudulent property"
   - "I think I'm being scammed"
   - "how do I flag a listing"
   - "report bad landlord"
   - "fake property listing"
   - "how do I flag a fake landlord"
+  - "how do I report a fake agent"
 responses:
   - "To report a listing, go to the listing page and click 'Report this listing' near the bottom, choose a reason, and add details. Our admin team reviews reports — typically within 48 hours."
 followups:

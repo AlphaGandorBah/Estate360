@@ -25,6 +25,13 @@ class ConversationSerializer(serializers.ModelSerializer):
     initiator_role = serializers.CharField(source="initiator.role", read_only=True)
     landlord_id = serializers.UUIDField(source="landlord.id", allow_null=True, read_only=True)
     landlord_name = serializers.CharField(source="landlord.full_name", allow_null=True, read_only=True)
+    provider_id = serializers.UUIDField(source="landlord.id", allow_null=True, read_only=True)
+    provider_name = serializers.CharField(
+        source="landlord.full_name", allow_null=True, read_only=True
+    )
+    provider_role = serializers.CharField(
+        source="landlord.role", allow_null=True, read_only=True
+    )
     listing_id = serializers.IntegerField(source="listing.id", allow_null=True, read_only=True)
     unread_count = serializers.SerializerMethodField()
 
@@ -37,6 +44,9 @@ class ConversationSerializer(serializers.ModelSerializer):
             "initiator_role",
             "landlord_id",
             "landlord_name",
+            "provider_id",
+            "provider_name",
+            "provider_role",
             "is_support",
             "listing_id",
             "last_message_at",
@@ -53,6 +63,7 @@ class ConversationSerializer(serializers.ModelSerializer):
 
 class StartConversationSerializer(serializers.Serializer):
     support = serializers.BooleanField(required=False, default=False)
+    provider_id = serializers.UUIDField(required=False, allow_null=True)
     landlord_id = serializers.UUIDField(required=False, allow_null=True)
     listing_id = serializers.IntegerField(required=False, allow_null=True)
     initial_message = serializers.CharField(required=False, allow_blank=True)

@@ -1,5 +1,5 @@
 import { Suspense, lazy, useEffect, useState } from 'react'
-import { Routes, Route, Navigate } from 'react-router-dom'
+import { Routes, Route, Navigate, Outlet } from 'react-router-dom'
 import Layout from '@/components/layout/Layout'
 import ProtectedRoute from '@/components/layout/ProtectedRoute'
 import ToastHost from '@/components/layout/ToastHost'
@@ -41,6 +41,7 @@ const AdminListingsPage = lazy(() => import('@/pages/admin/AdminListingsPage'))
 const AdminVerificationsPage = lazy(() => import('@/pages/admin/AdminVerificationsPage'))
 const AdminReportsPage = lazy(() => import('@/pages/admin/AdminReportsPage'))
 const AdminActionLogPage = lazy(() => import('@/pages/admin/AdminActionLogPage'))
+const AdminDeletionRequestsPage = lazy(() => import('@/pages/admin/AdminDeletionRequestsPage'))
 
 const AccountPage = lazy(() => import('@/pages/account/AccountPage'))
 const AccountSecurityPage = lazy(() => import('@/pages/account/AccountSecurityPage'))
@@ -53,6 +54,12 @@ function RouteFallback() {
       <div className="h-8 w-8 animate-spin rounded-full border-2 border-emerald-600 border-t-transparent" />
     </div>
   )
+}
+
+function RequireVerification() {
+  const user = useAuthStore((s) => s.user)
+  if (!user || user.role === 'admin' || user.is_verified) return <Outlet />
+  return <Navigate to="/verification" replace />
 }
 
 /**
@@ -123,37 +130,43 @@ export default function App() {
 
             {/* Requires auth */}
             <Route element={<ProtectedRoute />}>
-              {/* Dashboard: role-aware single route */}
-              <Route path="/dashboard" element={<DashboardPage />} />
-
-              {/* Shared (tenant + landlord) */}
-              <Route path="/conversations" element={<ConversationsPage />} />
-              <Route path="/conversations/:id" element={<ConversationDetailPage />} />
-              <Route path="/notifications" element={<NotificationsPage />} />
+              {/* Always accessible regardless of verification status */}
               <Route path="/account" element={<AccountPage />} />
               <Route path="/account/security" element={<AccountSecurityPage />} />
+              <Route path="/verification" element={<VerificationPage />} />
 
-              {/* Tenant */}
-              <Route element={<ProtectedRoute roles={['tenant']} />}>
-                <Route path="/saved" element={<SavedListingsPage />} />
-                <Route path="/preferences" element={<PreferencesPage />} />
-              </Route>
+              {/* Requires auth + identity verification */}
+              <Route element={<RequireVerification />}>
+                {/* Dashboard: role-aware single route */}
+                <Route path="/dashboard" element={<DashboardPage />} />
 
-              {/* Landlord */}
-              <Route element={<ProtectedRoute roles={['landlord']} />}>
-                <Route path="/my-listings" element={<MyListingsPage />} />
-                <Route path="/verification" element={<VerificationPage />} />
-                <Route path="/listings/create" element={<CreateListingPage />} />
-                <Route path="/listings/:id/edit" element={<EditListingPage />} />
-              </Route>
+                {/* Shared by every verified user role */}
+                <Route path="/conversations" element={<ConversationsPage />} />
+                <Route path="/conversations/:id" element={<ConversationDetailPage />} />
+                <Route path="/notifications" element={<NotificationsPage />} />
 
-              {/* Admin */}
-              <Route element={<ProtectedRoute roles={['admin']} />}>
-                <Route path="/admin/users" element={<AdminUsersPage />} />
-                <Route path="/admin/listings" element={<AdminListingsPage />} />
-                <Route path="/admin/verifications" element={<AdminVerificationsPage />} />
-                <Route path="/admin/reports" element={<AdminReportsPage />} />
-                <Route path="/admin/action-log" element={<AdminActionLogPage />} />
+                {/* Tenant */}
+                <Route element={<ProtectedRoute roles={['tenant']} />}>
+                  <Route path="/saved" element={<SavedListingsPage />} />
+                  <Route path="/preferences" element={<PreferencesPage />} />
+                </Route>
+
+                {/* Property providers */}
+                <Route element={<ProtectedRoute roles={['landlord', 'agent']} />}>
+                  <Route path="/my-listings" element={<MyListingsPage />} />
+                  <Route path="/listings/create" element={<CreateListingPage />} />
+                  <Route path="/listings/:id/edit" element={<EditListingPage />} />
+                </Route>
+
+                {/* Admin */}
+                <Route element={<ProtectedRoute roles={['admin']} />}>
+                  <Route path="/admin/users" element={<AdminUsersPage />} />
+                  <Route path="/admin/listings" element={<AdminListingsPage />} />
+                  <Route path="/admin/verifications" element={<AdminVerificationsPage />} />
+                  <Route path="/admin/reports" element={<AdminReportsPage />} />
+                  <Route path="/admin/action-log" element={<AdminActionLogPage />} />
+                  <Route path="/admin/deletion-requests" element={<AdminDeletionRequestsPage />} />
+                </Route>
               </Route>
             </Route>
 

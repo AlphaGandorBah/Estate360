@@ -2,7 +2,6 @@
 import pytest
 from django.conf import settings
 from django.contrib.auth import get_user_model
-from django.urls import reverse
 
 User = get_user_model()
 
@@ -17,10 +16,24 @@ class TestRegister:
             "full_name": "New User",
             "role": "tenant",
             "password": "StrongPass@123",
+            "confirm_password": "StrongPass@123",
         }
         resp = api_client.post(self.url, data, format="json")
         assert resp.status_code == 201
         assert User.objects.filter(email="newuser@test.com").exists()
+
+    def test_register_legacy_payload_without_confirmation(self, api_client):
+        data = {
+            "email": "legacy-client@test.com",
+            "full_name": "Legacy Client",
+            "role": "tenant",
+            "password": "StrongPass@123",
+        }
+
+        resp = api_client.post(self.url, data, format="json")
+
+        assert resp.status_code == 201
+        assert User.objects.filter(email="legacy-client@test.com").exists()
 
     def test_register_duplicate_email(self, api_client, tenant_user):
         data = {
@@ -28,6 +41,7 @@ class TestRegister:
             "full_name": "Dup",
             "role": "tenant",
             "password": "StrongPass@123",
+            "confirm_password": "StrongPass@123",
         }
         resp = api_client.post(self.url, data, format="json")
         assert resp.status_code == 400
@@ -38,6 +52,7 @@ class TestRegister:
             "full_name": "X",
             "role": "admin",
             "password": "StrongPass@123",
+            "confirm_password": "StrongPass@123",
         }
         resp = api_client.post(self.url, data, format="json")
         assert resp.status_code == 400
@@ -51,6 +66,11 @@ class TestLogin:
         resp = api_client.post(self.url, {"email": tenant_user.email, "password": "TestPass@123"}, format="json")
         assert resp.status_code == 200
         assert "access" in resp.data
+
+        refresh_cookie = resp.cookies[settings.JWT_REFRESH_COOKIE_NAME]
+        assert refresh_cookie["secure"] is True
+        assert refresh_cookie["httponly"] is True
+        assert refresh_cookie["samesite"] == "Lax"
 
     def test_login_wrong_password(self, api_client, tenant_user):
         resp = api_client.post(self.url, {"email": tenant_user.email, "password": "wrong"}, format="json")
@@ -119,27 +139,29 @@ class TestRefresh:
 class TestVerifyEmail:
     url = "/api/v1/auth/verify-email"
 
-    def test_verify_success(self, api_client, tenant_user):
-        from apps.accounts.otp import create_otp
+    def test_verify_email_success_does_not_bypass_identity_review(self, api_client, tenant_user):
         from apps.accounts.models import EmailOTP
+        from apps.accounts.otp import create_otp
         otp = create_otp(tenant_user.email, EmailOTP.PURPOSE_VERIFY)
         resp = api_client.post(self.url, {"email": tenant_user.email, "code": otp.code}, format="json")
         assert resp.status_code == 200
         tenant_user.refresh_from_db()
-        assert tenant_user.is_verified
+        assert not tenant_user.is_verified
 
     def test_verify_wrong_code(self, api_client, tenant_user):
-        from apps.accounts.otp import create_otp
         from apps.accounts.models import EmailOTP
+        from apps.accounts.otp import create_otp
         create_otp(tenant_user.email, EmailOTP.PURPOSE_VERIFY)
         resp = api_client.post(self.url, {"email": tenant_user.email, "code": "000000"}, format="json")
         assert resp.status_code == 400
 
     def test_verify_expired_otp(self, api_client, tenant_user):
+        from datetime import timedelta
+
+        from django.utils import timezone
+
         from apps.accounts.models import EmailOTP
         from apps.accounts.otp import create_otp
-        from django.utils import timezone
-        from datetime import timedelta
         otp = create_otp(tenant_user.email, EmailOTP.PURPOSE_VERIFY)
         EmailOTP.objects.filter(pk=otp.pk).update(expires_at=timezone.now() - timedelta(seconds=1))
         resp = api_client.post(self.url, {"email": tenant_user.email, "code": otp.code}, format="json")
@@ -161,11 +183,25 @@ class TestPasswordReset:
         )
         assert resp.status_code == 200
 
-        # Step 2: confirm
+        # Step 2: verify the one-time code and obtain a signed reset token
         otp = create_otp(tenant_user.email, EmailOTP.PURPOSE_RESET)
         resp = api_client.post(
+            "/api/v1/auth/password-reset/verify-otp",
+            {"email": tenant_user.email, "code": otp.code},
+            format="json",
+        )
+        assert resp.status_code == 200
+        reset_token = resp.data["reset_token"]
+
+        # Step 3: set and confirm the new password
+        resp = api_client.post(
             "/api/v1/auth/password-reset/confirm",
-            {"email": tenant_user.email, "code": otp.code, "new_password": "NewPass@456"},
+            {
+                "email": tenant_user.email,
+                "reset_token": reset_token,
+                "new_password": "NewPass@456",
+                "confirm_password": "NewPass@456",
+            },
             format="json",
         )
         assert resp.status_code == 200

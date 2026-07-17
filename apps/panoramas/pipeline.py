@@ -24,6 +24,7 @@ logger = structlog.get_logger(__name__)
 ALLOWED_MIME = {"image/jpeg", "image/png"}
 MAX_SIZE = settings.PANORAMA_MAX_SIZE_BYTES
 MIN_W = settings.PANORAMA_MIN_WIDTH
+MIN_ASPECT_RATIO = settings.PANORAMA_MIN_ASPECT_RATIO
 MAX_LONG = settings.PANORAMA_MAX_LONG_EDGE
 
 
@@ -38,7 +39,12 @@ def detect_projection(width: int, height: int) -> str:
 
 
 def validate_image(file_obj, content_type: str, size: int) -> tuple[int, int, str]:
-    """Validate, return (width, height, projection). Raises ValueError on failure."""
+    """Validate image and return (width, height, projection). Raises ValueError on failure.
+
+    Height itself is not constrained — panoramic apps and devices produce images
+    with widely different aspect ratios (2:1, 4:1, 6:1, …). A minimum aspect ratio
+    rejects ordinary flat photos that cannot contain panoramic scene data.
+    """
     if content_type not in ALLOWED_MIME:
         raise ValueError(f"File type {content_type} not allowed. Use JPG or PNG.")
     if size > MAX_SIZE:
@@ -52,17 +58,19 @@ def validate_image(file_obj, content_type: str, size: int) -> tuple[int, int, st
     w, h = img.size
 
     if w < MIN_W:
-        raise ValueError(f"Image width {w}px is below minimum {MIN_W}px.")
+        raise ValueError(f"Image width {w}px is below the {MIN_W}px minimum for a usable panorama.")
+
+    aspect_ratio = w / h
+    if aspect_ratio < MIN_ASPECT_RATIO:
+        raise ValueError(
+            f"Image is not panoramic ({w}x{h}, {aspect_ratio:.2f}:1). "
+            f"Use Panorama mode; the image must be at least {MIN_ASPECT_RATIO}:1."
+        )
+
+    if max(w, h) > MAX_LONG:
+        raise ValueError(f"Image is too large ({max(w, h)}px on the long edge; maximum is {MAX_LONG}px).")
 
     projection = detect_projection(w, h)
-    min_h = settings.PANORAMA_MIN_HEIGHT_EQUIRECT if projection == "equirectangular" else settings.PANORAMA_MIN_HEIGHT_CYLINDRICAL
-    if h < min_h:
-        raise ValueError(f"Image height {h}px is below minimum {min_h}px for {projection}.")
-
-    long_edge = max(w, h)
-    if long_edge > MAX_LONG:
-        raise ValueError(f"Long edge {long_edge}px exceeds maximum {MAX_LONG}px.")
-
     return w, h, projection
 
 

@@ -1,5 +1,5 @@
 import { http, HttpResponse } from 'msw'
-import { mockConversations, mockMessages } from '../fixtures'
+import { mockConversations, mockMessages, mockUsers } from '../fixtures'
 import type { Conversation, Message } from '@/types'
 
 let conversations = [...mockConversations]
@@ -13,18 +13,23 @@ export const messagingHandlers = [
 
   http.post('/api/v1/conversations/', async ({ request }) => {
     const body = await request.json() as {
-      support?: boolean; landlord_id?: string; listing_id?: number; initial_message?: string
+      support?: boolean; provider_id?: string; landlord_id?: string; listing_id?: number; initial_message?: string
     }
+    const providerId = body.provider_id ?? body.landlord_id ?? 'u2'
+    const provider = mockUsers.find((user) => user.id === providerId)
+    const providerRole = provider?.role === 'agent' ? 'agent' : 'landlord'
     const conv: Conversation = body.support
       ? {
           id: nextConvId++, initiator_id: 'u1', initiator_name: 'Aminata Koroma', initiator_role: 'tenant',
+          provider_id: null, provider_name: null, provider_role: null,
           landlord_id: null, landlord_name: null, is_support: true,
           listing_id: null, last_message_at: new Date().toISOString(),
           unread_count: 0, created_at: new Date().toISOString(),
         }
       : {
           id: nextConvId++, initiator_id: 'u1', initiator_name: 'Aminata Koroma', initiator_role: 'tenant',
-          landlord_id: body.landlord_id ?? 'u2', landlord_name: 'Mohamed Bah', is_support: false,
+          provider_id: providerId, provider_name: provider?.full_name ?? 'Property provider', provider_role: providerRole,
+          landlord_id: providerId, landlord_name: provider?.full_name ?? 'Property provider', is_support: false,
           listing_id: body.listing_id ?? null, last_message_at: new Date().toISOString(),
           unread_count: 0, created_at: new Date().toISOString(),
         }

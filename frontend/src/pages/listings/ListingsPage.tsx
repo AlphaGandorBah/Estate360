@@ -298,7 +298,7 @@ export default function ListingsPage() {
       {/* Mobile filter slide-over */}
       {mobileFiltersOpen && (
         <div className="fixed inset-0 z-50 flex lg:hidden">
-          <div className="absolute inset-0 bg-black/50" onClick={() => setMobileFiltersOpen(false)} />
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setMobileFiltersOpen(false)} />
           <div className="relative ml-auto flex h-full w-80 max-w-[85vw] flex-col overflow-y-auto bg-white p-5 dark:bg-gray-800">
             <div className="flex items-center justify-between">
               <h2 className="font-semibold text-gray-900 dark:text-gray-100">Filters</h2>

@@ -11,9 +11,13 @@ export type LoginForm = z.infer<typeof loginSchema>
 export const registerSchema = z.object({
   full_name: z.string().min(1, 'Full name is required'),
   email: z.string().min(1, 'Email is required').email('Enter a valid email'),
-  phone: z.string().optional(),
-  role: z.enum(['tenant', 'landlord']),
+  phone: z.string().min(1, 'Phone number is required'),
+  role: z.enum(['tenant', 'landlord', 'agent']),
   password: z.string().min(8, 'Password must be at least 8 characters'),
+  confirm_password: z.string().min(1, 'Please confirm your password'),
+}).refine((d) => d.password === d.confirm_password, {
+  message: 'Passwords do not match',
+  path: ['confirm_password'],
 })
 export type RegisterForm = z.infer<typeof registerSchema>
 
@@ -22,9 +26,17 @@ export const forgotPasswordSchema = z.object({
 })
 export type ForgotPasswordForm = z.infer<typeof forgotPasswordSchema>
 
-export const resetPasswordSchema = z.object({
+export const resetPasswordOtpSchema = z.object({
   code: z.string().length(6, 'Enter the 6-digit code'),
+})
+export type ResetPasswordOtpForm = z.infer<typeof resetPasswordOtpSchema>
+
+export const resetPasswordSchema = z.object({
   new_password: z.string().min(8, 'Password must be at least 8 characters'),
+  confirm_password: z.string().min(1, 'Please confirm your password'),
+}).refine((d) => d.new_password === d.confirm_password, {
+  message: 'Passwords do not match',
+  path: ['confirm_password'],
 })
 export type ResetPasswordForm = z.infer<typeof resetPasswordSchema>
 

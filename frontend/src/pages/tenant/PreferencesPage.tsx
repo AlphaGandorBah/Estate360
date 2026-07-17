@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { recommendationsApi } from '@/api'
 import { AREA_LABELS, PROPERTY_LABELS } from '@/lib/utils'
@@ -15,15 +15,17 @@ interface PrefForm {
   max_price: number
 }
 
+const DEFAULT_PREF_FORM: PrefForm = {
+  preferred_areas: [],
+  property_types: [],
+  min_bedrooms: 0,
+  min_price: 0,
+  max_price: 0,
+}
+
 export default function PreferencesPage() {
   const qc = useQueryClient()
-  const [form, setForm] = useState<PrefForm>({
-    preferred_areas: [],
-    property_types: [],
-    min_bedrooms: 0,
-    min_price: 0,
-    max_price: 0,
-  })
+  const [formDraft, setFormDraft] = useState<PrefForm | null>(null)
   const [saved, setSaved] = useState(false)
 
   const { data: prefs } = useQuery({
@@ -31,16 +33,19 @@ export default function PreferencesPage() {
     queryFn: () => recommendationsApi.getPreferences().then((r) => r.data),
   })
 
-  useEffect(() => {
-    if (!prefs) return
-    setForm({
+  const form = formDraft ?? (prefs
+    ? {
       preferred_areas: prefs.preferred_areas ?? [],
       property_types: prefs.property_types ?? [],
       min_bedrooms: prefs.min_bedrooms ?? 0,
       min_price: prefs.min_price ?? 0,
       max_price: prefs.max_price ?? 0,
-    })
-  }, [prefs])
+    }
+    : DEFAULT_PREF_FORM)
+
+  const updateForm = (update: (current: PrefForm) => PrefForm) => {
+    setFormDraft((current) => update(current ?? form))
+  }
 
   const saveMut = useMutation({
     mutationFn: () => recommendationsApi.savePreferences(form),
@@ -53,7 +58,7 @@ export default function PreferencesPage() {
   })
 
   const toggleList = <T extends string>(k: 'preferred_areas' | 'property_types', val: T) => {
-    setForm((f) => {
+    updateForm((f) => {
       const cur = f[k] as T[]
       const next = cur.includes(val) ? cur.filter((x) => x !== val) : [...cur, val]
       return { ...f, [k]: next }
@@ -112,19 +117,19 @@ export default function PreferencesPage() {
           <div>
             <label className="label">Min bedrooms</label>
             <input type="number" min={0} value={form.min_bedrooms}
-              onChange={(e) => setForm((f) => ({ ...f, min_bedrooms: +e.target.value }))}
+              onChange={(e) => updateForm((f) => ({ ...f, min_bedrooms: +e.target.value }))}
               className="input" />
           </div>
           <div>
             <label className="label">Min price</label>
             <input type="number" min={0} value={form.min_price}
-              onChange={(e) => setForm((f) => ({ ...f, min_price: +e.target.value }))}
+              onChange={(e) => updateForm((f) => ({ ...f, min_price: +e.target.value }))}
               className="input" />
           </div>
           <div>
             <label className="label">Max price</label>
             <input type="number" min={0} value={form.max_price}
-              onChange={(e) => setForm((f) => ({ ...f, max_price: +e.target.value }))}
+              onChange={(e) => updateForm((f) => ({ ...f, max_price: +e.target.value }))}
               className="input" />
           </div>
         </div>

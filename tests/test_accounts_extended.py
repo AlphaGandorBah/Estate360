@@ -33,13 +33,15 @@ class TestMeView:
         )
         assert resp.status_code == 200
 
-    def test_delete_soft_deletes_user(self, tenant_client, tenant_user):
+    def test_direct_delete_requires_admin_review(self, tenant_client, tenant_user):
         resp = tenant_client.delete("/api/v1/users/me")
-        assert resp.status_code == 204
+        assert resp.status_code == 405
         tenant_user.refresh_from_db()
-        assert tenant_user.deleted_at is not None
+        assert tenant_user.deleted_at is None
 
-    def test_delete_archives_active_listings(self, landlord_client, verified_landlord):
+    def test_deletion_request_keeps_listings_active_until_approved(
+        self, landlord_client, verified_landlord
+    ):
         from apps.listings.models import Listing, ListingStatus
         listing = Listing.objects.create(
             owner=verified_landlord,
@@ -53,10 +55,15 @@ class TestMeView:
             location_area="aberdeen",
             status=ListingStatus.APPROVED,
         )
-        resp = landlord_client.delete("/api/v1/users/me")
-        assert resp.status_code == 204
+        resp = landlord_client.post(
+            "/api/v1/users/me/request-deletion",
+            {"reason": "I no longer need the account."},
+            format="json",
+        )
+        assert resp.status_code == 201
+        assert resp.data["status"] == "pending"
         listing.refresh_from_db()
-        assert listing.status == "archived"
+        assert listing.status == "approved"
 
 
 @pytest.mark.django_db
@@ -103,24 +110,31 @@ class TestPasswordResetFlow:
         from apps.accounts.otp import create_otp
         otp = create_otp(tenant_user, purpose="password_reset")
         resp = api_client.post(
-            "/api/v1/auth/password-reset/confirm",
-            {
-                "email": tenant_user.email,
-                "code": otp.code,
-                "new_password": "NewSecurePass@456",
-            },
+            "/api/v1/auth/password-reset/verify-otp",
+            {"email": tenant_user.email, "code": otp.code},
             format="json",
         )
         assert resp.status_code == 200
+        reset_token = resp.data["reset_token"]
 
-    def test_confirm_with_wrong_otp(self, api_client, tenant_user):
         resp = api_client.post(
             "/api/v1/auth/password-reset/confirm",
             {
                 "email": tenant_user.email,
-                "code": "000000",
+                "reset_token": reset_token,
                 "new_password": "NewSecurePass@456",
+                "confirm_password": "NewSecurePass@456",
             },
+            format="json",
+        )
+        assert resp.status_code == 200
+        tenant_user.refresh_from_db()
+        assert tenant_user.check_password("NewSecurePass@456")
+
+    def test_confirm_with_wrong_otp(self, api_client, tenant_user):
+        resp = api_client.post(
+            "/api/v1/auth/password-reset/verify-otp",
+            {"email": tenant_user.email, "code": "000000"},
             format="json",
         )
         assert resp.status_code == 400

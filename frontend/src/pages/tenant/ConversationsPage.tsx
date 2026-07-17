@@ -26,7 +26,9 @@ export default function ConversationsPage() {
 
   const otherName = (c: Conversation) => {
     if (c.is_support) return user?.role === 'admin' ? c.initiator_name : 'Admin Support'
-    return user?.id === c.initiator_id ? c.landlord_name : c.initiator_name
+    return user?.id === c.initiator_id
+      ? (c.provider_name ?? c.landlord_name ?? 'Listing provider')
+      : c.initiator_name
   }
 
   if (isLoading) return (
@@ -76,7 +78,11 @@ export default function ConversationsPage() {
                 </span>
               </div>
               <div className="text-sm text-gray-500 truncate dark:text-gray-400">
-                {c.is_support ? 'Support' : c.listing_id ? `Listing #${c.listing_id}` : 'General enquiry'}
+                {c.is_support
+                  ? 'Support'
+                  : c.listing_id
+                  ? `${user?.id === c.initiator_id && c.provider_role ? `${c.provider_role === 'agent' ? 'Agent' : 'Landlord'} · ` : ''}Listing #${c.listing_id}`
+                  : 'General enquiry'}
               </div>
             </div>
             {c.unread_count > 0 && (

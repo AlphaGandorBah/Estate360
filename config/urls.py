@@ -8,7 +8,10 @@ from drf_spectacular.views import (
     SpectacularSwaggerView,
 )
 
+from apps.common.media_views import PublicPanoramaMediaView
+
 _api_urlpatterns = [
+    path("media/<path:key>", PublicPanoramaMediaView.as_view(), name="public-panorama-media"),
     # ── Auth & Users ──────────────────────────────────────────────
     path("auth/", include("apps.accounts.urls.auth")),
     path("users/", include("apps.accounts.urls.users")),

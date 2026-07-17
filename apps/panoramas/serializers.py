@@ -1,5 +1,6 @@
 """Panorama serializers."""
 from rest_framework import serializers
+
 from .models import Panorama
 
 
@@ -29,8 +30,8 @@ class PanoramaSerializer(serializers.ModelSerializer):
     def _presign(self, key: str):
         if not key:
             return None
-        from apps.common.storage import generate_presigned_url
-        return generate_presigned_url(key)
+        from apps.common.storage import public_media_url
+        return public_media_url(key)
 
     def get_tile_url(self, obj) -> str | None:
         # Return presigned URL to tiles/config.json

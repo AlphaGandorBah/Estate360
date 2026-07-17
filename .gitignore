@@ -2,9 +2,13 @@ venv/
 __pycache__/
 *.pyc
 .pytest_cache/
+.coverage
+htmlcov/
+pytest-temp-*/
 media/
 staticfiles/
 .env
+.certs/
 
 apps/chatbot/models/
 

@@ -6,11 +6,12 @@ export const mockUsers: User[] = [
   { id: 'u1', email: 'tenant@example.com', full_name: 'Aminata Koroma', phone: '+23276000001', role: 'tenant', is_verified: false, avatar_url: null, date_joined: '2025-01-01T00:00:00Z' },
   { id: 'u2', email: 'landlord@example.com', full_name: 'Mohamed Bah', phone: '+23276000002', role: 'landlord', is_verified: true, avatar_url: null, date_joined: '2025-01-01T00:00:00Z' },
   { id: 'u3', email: 'admin@example.com', full_name: 'Estate360 Admin', phone: '', role: 'admin', is_verified: true, avatar_url: null, date_joined: '2025-01-01T00:00:00Z' },
+  { id: 'u4', email: 'agent@example.com', full_name: 'Hawa Kamara', phone: '+23276000004', role: 'agent', is_verified: true, avatar_url: null, date_joined: '2025-02-01T00:00:00Z' },
 ]
 
 export const mockListings: Listing[] = [
   {
-    id: 1, owner_id: 'u2', owner_name: 'Mohamed Bah', owner_verified: true,
+    id: 1, owner_id: 'u2', owner_name: 'Mohamed Bah', owner_role: 'landlord', owner_verified: true,
     title: '2-bedroom apartment in Aberdeen', description: 'Bright apartment near the beach, freshly painted.',
     property_type: 'apartment', bedrooms: 2, bathrooms: 1, price_annual: 18000000, currency: 'SLE',
     location_area: 'aberdeen', lat: 8.4870, lng: -13.2840, status: 'approved',
@@ -18,11 +19,18 @@ export const mockListings: Listing[] = [
     created_at: '2025-06-01T00:00:00Z', updated_at: '2025-06-01T00:00:00Z',
   },
   {
-    id: 2, owner_id: 'u2', owner_name: 'Mohamed Bah', owner_verified: true,
+    id: 2, owner_id: 'u2', owner_name: 'Mohamed Bah', owner_role: 'landlord', owner_verified: true,
     title: 'Studio in Lumley', description: 'Cosy studio, walking distance to the beach.',
     property_type: 'studio', bedrooms: 1, bathrooms: 1, price_annual: 9000000, currency: 'SLE',
     location_area: 'lumley', lat: null, lng: null, status: 'approved',
     panoramas: [], created_at: '2025-06-02T00:00:00Z', updated_at: '2025-06-02T00:00:00Z',
+  },
+  {
+    id: 3, owner_id: 'u4', owner_name: 'Hawa Kamara', owner_role: 'agent', owner_verified: true,
+    title: 'Family house in Wilberforce', description: 'Well-kept family home represented by a local rental agent.',
+    property_type: 'house', bedrooms: 3, bathrooms: 2, price_annual: 24000000, currency: 'SLE',
+    location_area: 'wilberforce', lat: 8.4660, lng: -13.2460, status: 'approved',
+    panoramas: [], created_at: '2025-06-03T00:00:00Z', updated_at: '2025-06-03T00:00:00Z',
   },
 ]
 
@@ -41,6 +49,7 @@ export const mockSaved: SavedListing[] = []
 export const mockConversations: Conversation[] = [
   {
     id: 1, initiator_id: 'u1', initiator_name: 'Aminata Koroma', initiator_role: 'tenant',
+    provider_id: 'u2', provider_name: 'Mohamed Bah', provider_role: 'landlord',
     landlord_id: 'u2', landlord_name: 'Mohamed Bah', is_support: false,
     listing_id: 1, last_message_at: '2025-06-10T12:00:00Z', unread_count: 1, created_at: '2025-06-10T11:00:00Z',
   },

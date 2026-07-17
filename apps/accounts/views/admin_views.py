@@ -1,12 +1,13 @@
 """Admin overview: registered user directory, user moderation actions, dashboard stats."""
+from django.utils import timezone
 from rest_framework import status
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from apps.accounts.models import EmailOTP, LandlordVerification, User
+from apps.accounts.models import AccountDeletionRequest, EmailOTP, LandlordVerification, User
 from apps.accounts.otp import create_otp
-from apps.accounts.serializers import AdminUserSerializer
+from apps.accounts.serializers import AccountDeletionRequestSerializer, AdminUserSerializer
 from apps.accounts.tasks import send_otp_email_task
 from apps.common.idempotency import IdempotencyMixin
 from apps.common.models import AdminActionLog
@@ -43,6 +44,7 @@ class AdminUserActionView(IdempotencyMixin, APIView):
         "restrict": AdminActionLog.ACTION_RESTRICT_USER,
         "unrestrict": AdminActionLog.ACTION_UNRESTRICT_USER,
         "reset_password": AdminActionLog.ACTION_RESET_PASSWORD,
+        "warn": AdminActionLog.ACTION_WARN_USER,
     }
 
     def post(self, request: Request, pk) -> Response:
@@ -173,8 +175,86 @@ class AdminStatsView(APIView):
                 status=LandlordVerification.STATUS_PENDING
             ).count(),
             "open_reports": FraudReport.objects.filter(status=FraudReport.STATUS_OPEN).count(),
-            # Scoped to support threads, not Conversation.objects.count() —
-            # that's what /conversations actually shows an admin (a shared
-            # support inbox), so the card should match what clicking it shows.
+            "pending_deletion_requests": AccountDeletionRequest.objects.filter(
+                status=AccountDeletionRequest.STATUS_PENDING
+            ).count(),
             "support_conversations": Conversation.objects.filter(is_support=True).count(),
         })
+
+
+class AdminDeletionRequestListView(APIView):
+    """GET /admin/deletion-requests/ — list account deletion requests."""
+
+    permission_classes = [IsAdminRole]
+    throttle_classes = [ReadThrottle]
+    throttle_scope = "read"
+
+    def get(self, request: Request) -> Response:
+        status_param = request.GET.get("status", AccountDeletionRequest.STATUS_PENDING)
+        if status_param not in dict(AccountDeletionRequest.STATUS_CHOICES):
+            return Response(
+                {"code": "invalid_status", "detail": f"status must be one of {[c[0] for c in AccountDeletionRequest.STATUS_CHOICES]}"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        qs = AccountDeletionRequest.objects.filter(
+            status=status_param
+        ).select_related("user").order_by("-requested_at")
+        paginator = StandardPagination()
+        page = paginator.paginate_queryset(qs, request)
+        return paginator.get_paginated_response(AccountDeletionRequestSerializer(page, many=True).data)
+
+
+class AdminDeletionRequestResolveView(IdempotencyMixin, APIView):
+    """POST /admin/deletion-requests/{pk}/resolve — approve or reject a deletion request."""
+
+    permission_classes = [IsAdminRole]
+
+    def post(self, request: Request, pk: int) -> Response:
+        short_circuit = self.enforce_idempotency(request)
+        if short_circuit is not None:
+            return short_circuit
+
+        try:
+            deletion_req = AccountDeletionRequest.objects.select_related("user").get(pk=pk)
+        except AccountDeletionRequest.DoesNotExist:
+            return Response({"code": "not_found", "detail": "Not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        if deletion_req.status != AccountDeletionRequest.STATUS_PENDING:
+            return Response(
+                {"code": "already_resolved", "detail": "This request has already been resolved."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        decision = request.data.get("decision")
+        if decision not in ("approved", "rejected"):
+            return Response(
+                {"code": "invalid_decision", "detail": "decision must be 'approved' or 'rejected'."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        notes = request.data.get("notes", "")
+        deletion_req.status = decision
+        deletion_req.resolved_by = request.user
+        deletion_req.resolved_at = timezone.now()
+        deletion_req.resolution_notes = notes
+        deletion_req.save()
+
+        if decision == "approved":
+            target = deletion_req.user
+            target.listings.filter(status="draft").delete()
+            target.listings.filter(status__in=["approved", "pending"]).update(status="archived")
+            target.soft_delete()
+            log_action = AdminActionLog.ACTION_APPROVE_DELETION
+        else:
+            log_action = AdminActionLog.ACTION_REJECT_DELETION
+
+        AdminActionLog.objects.create(
+            admin=request.user,
+            action=log_action,
+            target_user=deletion_req.user,
+            notes=notes,
+        )
+
+        response = Response(AccountDeletionRequestSerializer(deletion_req).data)
+        self.finalize_idempotency(request, response)
+        return response

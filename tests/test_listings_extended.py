@@ -66,21 +66,35 @@ class TestListingViewInteraction:
         resp = api_client.get(f"/api/v1/listings/{approved_listing.pk}")
         assert resp.status_code == 404
 
+    def test_draft_listing_is_hidden_from_the_public(
+        self, api_client, tenant_client, draft_listing
+    ):
+        assert api_client.get(f"/api/v1/listings/{draft_listing.pk}").status_code == 404
+        assert tenant_client.get(f"/api/v1/listings/{draft_listing.pk}").status_code == 404
+
+    def test_draft_listing_is_visible_to_its_owner(
+        self, landlord_client, draft_listing
+    ):
+        resp = landlord_client.get(f"/api/v1/listings/{draft_listing.pk}")
+
+        assert resp.status_code == 200
+        assert resp.data["id"] == draft_listing.pk
+
 
 @pytest.mark.django_db
 class TestAdminListingQueue:
     def test_admin_can_see_pending_listings(self, admin_client, pending_listing):
-        resp = admin_client.get("/api/v1/admin/listings")
+        resp = admin_client.get("/api/v1/admin/listings/")
         assert resp.status_code == 200
         ids = [item["id"] for item in resp.data["results"]]
         assert pending_listing.pk in ids
 
     def test_non_admin_cannot_see_queue(self, landlord_client):
-        resp = landlord_client.get("/api/v1/admin/listings")
+        resp = landlord_client.get("/api/v1/admin/listings/")
         assert resp.status_code == 403
 
     def test_approved_listings_not_in_queue(self, admin_client, approved_listing):
-        resp = admin_client.get("/api/v1/admin/listings")
+        resp = admin_client.get("/api/v1/admin/listings/")
         assert resp.status_code == 200
         ids = [item["id"] for item in resp.data["results"]]
         assert approved_listing.pk not in ids
@@ -224,6 +238,24 @@ class TestListingSubmit:
     def test_submit_not_found(self, landlord_client):
         resp = landlord_client.post("/api/v1/listings/99999/submit")
         assert resp.status_code == 404
+
+    def test_restricted_provider_cannot_submit(
+        self, landlord_client, verified_landlord, draft_listing
+    ):
+        from apps.panoramas.models import Panorama
+
+        Panorama.objects.create(
+            listing=draft_listing,
+            room_label="Living Room",
+            status=Panorama.STATUS_READY,
+        )
+        verified_landlord.is_restricted = True
+        verified_landlord.save(update_fields=["is_restricted"])
+
+        resp = landlord_client.post(f"/api/v1/listings/{draft_listing.pk}/submit")
+
+        assert resp.status_code == 403
+        assert resp.data["code"] == "restricted"
 
 
 @pytest.mark.django_db

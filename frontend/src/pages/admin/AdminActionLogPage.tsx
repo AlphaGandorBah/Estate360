@@ -12,6 +12,9 @@ const ACTION_LABELS: Record<AdminActionType, string> = {
   reset_password: 'Sent password reset',
   delete_user: 'Deleted user',
   delete_listing: 'Deleted listing',
+  warn_user: 'Warned user',
+  approve_deletion: 'Approved account deletion',
+  reject_deletion: 'Rejected account deletion',
 }
 
 export default function AdminActionLogPage() {

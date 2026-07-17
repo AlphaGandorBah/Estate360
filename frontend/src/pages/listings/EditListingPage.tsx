@@ -1,7 +1,7 @@
 import { useEffect } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { useForm } from 'react-hook-form'
+import { useForm, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { listingsApi, panoramasApi } from '@/api'
 import { AREA_LABELS, PROPERTY_LABELS, getErrorMessage } from '@/lib/utils'
@@ -22,11 +22,11 @@ export default function EditListingPage() {
   const user = useAuthStore((s) => s.user)
 
   const {
-    register, handleSubmit, setError, watch, setValue, reset,
+    register, handleSubmit, setError, setValue, reset, control,
     formState: { errors, isSubmitting, isDirty },
   } = useForm<ListingForm>({ resolver: zodResolver(listingSchema) })
-  const lat = watch('lat')
-  const lng = watch('lng')
+  const lat = useWatch({ control, name: 'lat' })
+  const lng = useWatch({ control, name: 'lng' })
 
   const { data: listing } = useQuery({
     queryKey: ['listing', listingId],
@@ -187,9 +187,9 @@ export default function EditListingPage() {
             disabled={!canSubmit || submitMut.isPending}
             title={
               !isVerified && !hasReadyPanorama
-                ? 'You must be a verified landlord and add at least one ready panorama before submitting.'
+                ? 'You must be a verified property provider and add at least one ready panorama before submitting.'
                 : !isVerified
-                ? 'You must be a verified landlord to submit listings for approval.'
+                ? 'You must be a verified property provider to submit listings for approval.'
                 : !hasReadyPanorama
                 ? 'Add at least one panorama and wait for it to finish processing (status: ready) before submitting.'
                 : undefined

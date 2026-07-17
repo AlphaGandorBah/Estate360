@@ -50,7 +50,7 @@ export default function LocationPicker({ lat, lng, onChange }: Props) {
       </div>
       <p className="mt-1.5 text-xs text-gray-500 dark:text-gray-400">
         {hasPin
-          ? 'Tap elsewhere or drag the pin to adjust. The exact pin is private — tenants only see an approximate area on the public listing.'
+          ? 'Tap elsewhere or drag the pin to adjust. The exact pin is private — visitors only see an approximate area on the public listing.'
           : 'Tap the map to drop a pin at the property (optional — the area label alone is shown if you skip this).'}
       </p>
     </div>

@@ -1,11 +1,9 @@
 """Tests for panorama pipeline functions and API views."""
 import io
-import uuid
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 import pytest
 from PIL import Image
-
 
 # ---------------------------------------------------------------------------
 # Pipeline unit tests (no DB needed)
@@ -117,17 +115,24 @@ class TestValidateImage:
             validate_image(buf, "application/pdf", 1000)
 
     def test_oversized_raises(self):
-        from apps.panoramas.pipeline import validate_image
         from django.conf import settings
+
+        from apps.panoramas.pipeline import validate_image
         buf = _make_jpeg()
         with pytest.raises(ValueError, match="exceeds"):
             validate_image(buf, "image/jpeg", settings.PANORAMA_MAX_SIZE_BYTES + 1)
 
     def test_too_narrow_raises(self):
+
         from apps.panoramas.pipeline import validate_image
-        from django.conf import settings
         buf = _make_jpeg(100, 50)
         with pytest.raises(ValueError, match="width"):
+            validate_image(buf, "image/jpeg", buf.getbuffer().nbytes)
+
+    def test_flat_photo_raises(self):
+        from apps.panoramas.pipeline import validate_image
+        buf = _make_jpeg(1600, 1200)
+        with pytest.raises(ValueError, match="not panoramic"):
             validate_image(buf, "image/jpeg", buf.getbuffer().nbytes)
 
 
@@ -156,6 +161,21 @@ class TestPanoramaListCreate:
         resp = api_client.get(f"/api/v1/listings/{approved_listing.pk}/panoramas")
         assert resp.status_code == 200
 
+    def test_draft_panoramas_are_private(
+        self, api_client, tenant_client, landlord_client, verified_landlord
+    ):
+        listing = self._make_listing(verified_landlord)
+
+        assert api_client.get(
+            f"/api/v1/listings/{listing.pk}/panoramas"
+        ).status_code == 404
+        assert tenant_client.get(
+            f"/api/v1/listings/{listing.pk}/panoramas"
+        ).status_code == 404
+        assert landlord_client.get(
+            f"/api/v1/listings/{listing.pk}/panoramas"
+        ).status_code == 200
+
     def test_list_not_found(self, api_client):
         resp = api_client.get("/api/v1/listings/99999/panoramas")
         assert resp.status_code == 404
@@ -174,9 +194,23 @@ class TestPanoramaListCreate:
         )
         assert resp.status_code == 403
 
+    def test_restricted_owner_cannot_upload(
+        self, landlord_client, verified_landlord
+    ):
+        listing = self._make_listing(verified_landlord)
+        verified_landlord.is_restricted = True
+        verified_landlord.save(update_fields=["is_restricted"])
+
+        resp = landlord_client.post(
+            f"/api/v1/listings/{listing.pk}/panoramas", {}, format="multipart"
+        )
+
+        assert resp.status_code == 403
+        assert resp.data["code"] == "restricted"
+
     @patch("apps.panoramas.views.upload_file")
     @patch("apps.panoramas.views.process_panorama_task")
-    def test_upload_success(self, mock_task, mock_upload, landlord_client, verified_landlord):
+    def test_upload_success(self, mock_task, mock_upload, landlord_client, verified_landlord, django_capture_on_commit_callbacks):
         from apps.listings.models import Listing, ListingStatus
         listing = Listing.objects.create(
             owner=verified_landlord,
@@ -194,11 +228,16 @@ class TestPanoramaListCreate:
         from django.core.files.uploadedfile import SimpleUploadedFile
         uploaded = SimpleUploadedFile("test.jpg", buf.read(), content_type="image/jpeg")
 
-        resp = landlord_client.post(
-            f"/api/v1/listings/{listing.pk}/panoramas",
-            {"image": uploaded, "room_label": "Living Room", "ordering": "1"},
-            format="multipart",
-        )
+        # The task dispatch happens in an on_commit hook (so the worker can never
+        # query for the panorama row before its creating transaction commits) -
+        # capture and run those hooks to observe the dispatch within the test's
+        # own (rolled-back) transaction.
+        with django_capture_on_commit_callbacks(execute=True):
+            resp = landlord_client.post(
+                f"/api/v1/listings/{listing.pk}/panoramas",
+                {"image": uploaded, "room_label": "Living Room", "ordering": "1"},
+                format="multipart",
+            )
         assert resp.status_code == 202
         assert resp.data["status"] == "pending"
         assert mock_upload.called
@@ -226,6 +265,22 @@ class TestPanoramaListCreate:
         )
         assert resp.status_code == 400
         assert resp.data["code"] == "missing_file"
+
+    @patch("apps.panoramas.views.upload_file")
+    def test_upload_rejects_flat_photo(self, mock_upload, landlord_client, approved_listing):
+        from django.core.files.uploadedfile import SimpleUploadedFile
+        buf = _make_jpeg(1600, 1200)
+        uploaded = SimpleUploadedFile("flat.jpg", buf.read(), content_type="image/jpeg")
+
+        resp = landlord_client.post(
+            f"/api/v1/listings/{approved_listing.pk}/panoramas",
+            {"image": uploaded, "room_label": "Living Room"},
+            format="multipart",
+        )
+
+        assert resp.status_code == 400
+        assert resp.data["code"] == "invalid_panorama"
+        mock_upload.assert_not_called()
 
     @patch("apps.panoramas.views.upload_file")
     def test_upload_missing_room_label(self, mock_upload, landlord_client, verified_landlord):
@@ -270,6 +325,19 @@ class TestPanoramaDetail:
         resp = api_client.get(f"/api/v1/panoramas/{p.pk}")
         assert resp.status_code == 200
         assert resp.data["id"] == p.pk
+
+    def test_draft_detail_is_only_visible_to_owner(
+        self, api_client, tenant_client, landlord_client, approved_listing
+    ):
+        from apps.listings.models import ListingStatus
+
+        approved_listing.status = ListingStatus.DRAFT
+        approved_listing.save(update_fields=["status"])
+        p = self._make_panorama(approved_listing)
+
+        assert api_client.get(f"/api/v1/panoramas/{p.pk}").status_code == 404
+        assert tenant_client.get(f"/api/v1/panoramas/{p.pk}").status_code == 404
+        assert landlord_client.get(f"/api/v1/panoramas/{p.pk}").status_code == 200
 
     def test_get_not_found(self, api_client):
         resp = api_client.get("/api/v1/panoramas/99999")

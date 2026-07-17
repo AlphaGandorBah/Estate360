@@ -10,7 +10,7 @@ from rest_framework.views import APIView
 from apps.accounts.models import User
 from apps.common.idempotency import IdempotencyMixin
 from apps.common.pagination import MessageCursorPagination, StandardPagination
-from apps.common.permissions import IsConversationParticipant, IsTenant
+from apps.common.permissions import IsConversationParticipant
 from apps.common.throttles import MessagingThrottle, ReadThrottle
 from apps.listings.models import UserInteraction
 
@@ -40,7 +40,7 @@ class ConversationListView(IdempotencyMixin, APIView):
         user = request.user
         if user.role == User.ROLE_ADMIN:
             qs = Conversation.objects.filter(is_support=True)
-        elif user.role == User.ROLE_LANDLORD:
+        elif user.role in User.PROPERTY_PROVIDER_ROLES:
             qs = Conversation.objects.filter(landlord=user) | Conversation.objects.filter(
                 initiator=user, is_support=True
             )
@@ -82,32 +82,72 @@ class ConversationListView(IdempotencyMixin, APIView):
         else:
             if user.role != User.ROLE_TENANT:
                 return Response(
-                    {"code": "forbidden", "detail": "Only tenants can start conversations with a landlord."},
+                    {
+                        "code": "forbidden",
+                        "detail": "Only tenants can start conversations with a property provider.",
+                    },
                     status=status.HTTP_403_FORBIDDEN,
                 )
 
+            provider_id = serializer.validated_data.get("provider_id")
             landlord_id = serializer.validated_data.get("landlord_id")
-            if not landlord_id:
+            if provider_id and landlord_id and provider_id != landlord_id:
                 return Response(
-                    {"code": "invalid", "detail": "landlord_id is required."}, status=status.HTTP_400_BAD_REQUEST
+                    {
+                        "code": "provider_mismatch",
+                        "detail": "provider_id and landlord_id must identify the same user.",
+                    },
+                    status=status.HTTP_400_BAD_REQUEST,
                 )
+            requested_provider_id = provider_id or landlord_id
             listing_id = serializer.validated_data.get("listing_id")
-
-            try:
-                landlord = User.objects.get(pk=landlord_id, role=User.ROLE_LANDLORD, is_active=True)
-            except User.DoesNotExist:
-                return Response(
-                    {"code": "not_found", "detail": "Landlord not found."}, status=status.HTTP_404_NOT_FOUND
-                )
 
             listing = None
             if listing_id:
-                from apps.listings.models import Listing
+                from apps.listings.models import Listing, ListingStatus
+
                 try:
-                    listing = Listing.objects.get(pk=listing_id)
+                    listing = Listing.objects.select_related("owner").get(
+                        pk=listing_id,
+                        status=ListingStatus.APPROVED,
+                        owner__is_active=True,
+                        owner__deleted_at__isnull=True,
+                        owner__role__in=User.PROPERTY_PROVIDER_ROLES,
+                    )
                 except Listing.DoesNotExist:
                     return Response(
-                        {"code": "not_found", "detail": "Listing not found."}, status=status.HTTP_404_NOT_FOUND
+                        {"code": "not_found", "detail": "Approved listing not found."},
+                        status=status.HTTP_404_NOT_FOUND,
+                    )
+                landlord = listing.owner
+                if requested_provider_id and requested_provider_id != landlord.pk:
+                    return Response(
+                        {
+                            "code": "provider_mismatch",
+                            "detail": "The selected provider does not own this listing.",
+                        },
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
+            else:
+                if not requested_provider_id:
+                    return Response(
+                        {
+                            "code": "invalid",
+                            "detail": "provider_id is required when listing_id is not provided.",
+                        },
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
+                try:
+                    landlord = User.objects.get(
+                        pk=requested_provider_id,
+                        role__in=User.PROPERTY_PROVIDER_ROLES,
+                        is_active=True,
+                        deleted_at__isnull=True,
+                    )
+                except User.DoesNotExist:
+                    return Response(
+                        {"code": "not_found", "detail": "Property provider not found."},
+                        status=status.HTTP_404_NOT_FOUND,
                     )
 
             conv, created = Conversation.objects.get_or_create(

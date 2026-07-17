@@ -2,14 +2,11 @@
 from rest_framework import serializers
 
 from .models import (
-    Currency,
     Listing,
-    ListingStatus,
     LocationArea,
     PropertyType,
     SavedListing,
     SearchPreference,
-    UserInteraction,
 )
 
 
@@ -49,14 +46,15 @@ class PanoramaInlineSerializer(serializers.Serializer):
 
     def get_thumbnail_url(self, obj):
         if obj.thumbnail_key:
-            from apps.common.storage import generate_presigned_url
-            return generate_presigned_url(obj.thumbnail_key)
+            from apps.common.storage import public_media_url
+            return public_media_url(obj.thumbnail_key)
         return None
 
 
 class ListingReadSerializer(serializers.ModelSerializer):
     owner_id = serializers.UUIDField(source="owner.id", read_only=True)
     owner_name = serializers.CharField(source="owner.full_name", read_only=True)
+    owner_role = serializers.CharField(source="owner.role", read_only=True)
     owner_verified = serializers.BooleanField(source="owner.is_verified", read_only=True)
     panoramas = serializers.SerializerMethodField()
 
@@ -66,6 +64,7 @@ class ListingReadSerializer(serializers.ModelSerializer):
             "id",
             "owner_id",
             "owner_name",
+            "owner_role",
             "owner_verified",
             "title",
             "description",

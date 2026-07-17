@@ -4,8 +4,9 @@ import { listingsApi, messagingApi, verificationApi } from '@/api'
 import { useAuthStore } from '@/lib/auth'
 import { formatPrice } from '@/lib/intl'
 
-export default function LandlordDashboard() {
+export default function ProviderDashboard() {
   const user = useAuthStore((s) => s.user)
+  const isAgent = user?.role === 'agent'
 
   const { data: listings } = useQuery({
     queryKey: ['my-listings', 1],
@@ -24,20 +25,33 @@ export default function LandlordDashboard() {
 
   const approvedListings = listings?.results.filter((l) => l.status === 'approved').length ?? 0
   const pendingListings = listings?.results.filter((l) => l.status === 'pending').length ?? 0
-  const displayName = user?.email.split('@')[0] ?? 'there'
+  const displayName = user?.full_name || user?.email.split('@')[0] || 'there'
 
   return (
     <div className="space-y-8">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-          Welcome, {displayName}
-        </h1>
-        <p className="mt-1 text-gray-500 dark:text-gray-400">Manage your listings and conversations</p>
-      </div>
+      <section className="rounded-[1.75rem] border border-emerald-100 bg-gradient-to-r from-emerald-50 via-white to-teal-50 p-6 shadow-sm dark:border-emerald-900/40 dark:from-emerald-900/20 dark:via-gray-900 dark:to-teal-900/20">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-emerald-600">
+              {isAgent ? 'Agent hub' : 'Landlord hub'}
+            </p>
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+              Welcome, {displayName}
+            </h1>
+            <p className="mt-1 text-gray-600 dark:text-gray-300">
+              {isAgent
+                ? 'Manage listings for landlords and connect with prospective tenants from one workspace.'
+                : 'Manage your listings and conversations from one polished workspace.'}
+            </p>
+          </div>
+          <Link to="/listings/create" className="inline-flex items-center justify-center rounded-xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-700">
+            + New listing
+          </Link>
+        </div>
+      </section>
 
-      {/* Verification banner */}
       {(!verification || verification.status !== 'approved') && (
-        <div className={`rounded-xl border p-4 ${
+        <div className={`rounded-[1.35rem] border p-4 shadow-sm ${
           verification?.status === 'pending' ? 'border-yellow-200 bg-yellow-50 dark:border-yellow-800 dark:bg-yellow-900/20' :
           verification?.status === 'rejected' ? 'border-red-200 bg-red-50 dark:border-red-800 dark:bg-red-900/20' :
           'border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-900/20'
@@ -59,7 +73,7 @@ export default function LandlordDashboard() {
             </div>
             {!verification && (
               <Link to="/verification"
-                className="shrink-0 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700">
+                className="shrink-0 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-700">
                 Start verification
               </Link>
             )}
@@ -67,7 +81,6 @@ export default function LandlordDashboard() {
         </div>
       )}
 
-      {/* Stats */}
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
         {[
           { label: 'Total listings', value: listings?.count ?? 0, href: '/my-listings' },
@@ -76,29 +89,24 @@ export default function LandlordDashboard() {
           { label: 'Messages', value: conversations?.count ?? 0, href: '/conversations' },
         ].map((s) => (
           <Link key={s.label} to={s.href}
-            className="rounded-xl border border-gray-200 bg-white p-5 hover:shadow-sm transition dark:border-gray-700 dark:bg-gray-800">
+            className="rounded-[1.2rem] border border-gray-200 bg-white p-5 transition duration-200 hover:-translate-y-1 hover:shadow-md dark:border-gray-700 dark:bg-gray-800">
             <div className="text-3xl font-bold text-emerald-600 dark:text-emerald-400">{s.value}</div>
             <div className="mt-1 text-sm text-gray-500 dark:text-gray-400">{s.label}</div>
           </Link>
         ))}
       </div>
 
-      {/* Recent listings */}
       <section>
         <div className="flex items-center justify-between">
-          <h2 className="font-semibold text-gray-900 dark:text-gray-100">Your listings</h2>
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">Your listings</h2>
           <div className="flex gap-3">
-            <Link to="/listings/create"
-              className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700">
-              + New listing
-            </Link>
-            <Link to="/my-listings" className="text-sm text-emerald-600 hover:underline self-center dark:text-emerald-400">View all</Link>
+            <Link to="/my-listings" className="self-center text-sm font-medium text-emerald-600 hover:underline dark:text-emerald-400">View all</Link>
           </div>
         </div>
 
         <div className="mt-3 space-y-2">
           {listings?.results.slice(0, 5).map((l) => (
-            <div key={l.id} className="flex items-center gap-4 rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800">
+            <div key={l.id} className="flex items-center gap-4 rounded-[1.1rem] border border-gray-200 bg-white p-4 transition duration-200 hover:-translate-y-0.5 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:hover:bg-gray-700">
               <div className="flex-1 min-w-0">
                 <div className="font-medium text-gray-900 truncate dark:text-gray-100">{l.title}</div>
                 <div className="text-sm text-gray-500 dark:text-gray-400">
@@ -121,7 +129,7 @@ export default function LandlordDashboard() {
           ))}
 
           {!listings?.results.length && (
-            <div className="rounded-xl border border-gray-200 bg-white py-10 text-center text-gray-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400">
+            <div className="rounded-[1.1rem] border border-gray-200 bg-white py-10 text-center text-gray-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400">
               No listings yet.{' '}
               <Link to="/listings/create" className="text-emerald-600 hover:underline dark:text-emerald-400">
                 Create your first listing

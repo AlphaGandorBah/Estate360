@@ -43,6 +43,8 @@ export default function ListingDetailPage() {
     enabled: user?.role === 'tenant',
   })
   const isSaved = savedData?.results.some((s) => s.listing.id === listingId) ?? false
+  const providerLabel = listing?.owner_role === 'agent' ? 'Agent' : 'Landlord'
+  const providerLabelLower = providerLabel.toLowerCase()
 
   const saveMut = useMutation({
     mutationFn: () => (isSaved ? listingsApi.unsave(listingId) : listingsApi.save(listingId)),
@@ -65,7 +67,7 @@ export default function ListingDetailPage() {
   const contactMut = useMutation({
     mutationFn: async () => {
       const r = await messagingApi.startConversation({
-        landlord_id: listing!.owner_id,
+        provider_id: listing!.owner_id,
         listing_id: listingId,
         initial_message: contactMsg,
       })
@@ -122,7 +124,7 @@ export default function ListingDetailPage() {
             </span>
             {listing.owner_verified && (
               <span className="rounded-full bg-yellow-100 px-3 py-1 text-xs font-medium text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400">
-                Verified
+                Verified {providerLabel}
               </span>
             )}
           </div>
@@ -200,12 +202,12 @@ export default function ListingDetailPage() {
               </button>
               <button onClick={() => setShowContact(true)}
                 className="mt-2 w-full rounded-lg bg-emerald-600 py-2.5 text-sm font-semibold text-white hover:bg-emerald-700">
-                Contact landlord
+                Contact {providerLabelLower}
               </button>
             </>
           )}
 
-          {user?.role === 'landlord' && user.id === listing.owner_id && (
+          {(user?.role === 'landlord' || user?.role === 'agent') && user.id === listing.owner_id && (
             <Link to={`/listings/${listingId}/edit`}
               className="mt-4 block w-full rounded-lg border border-gray-300 py-2.5 text-center text-sm font-semibold text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700">
               Edit listing
@@ -222,7 +224,10 @@ export default function ListingDetailPage() {
             <div>
               <div className="font-medium text-gray-900 dark:text-gray-100">{listing.owner_name}</div>
               {listing.owner_verified && (
-                <div className="text-xs text-yellow-600 dark:text-yellow-400">Verified landlord</div>
+                <div className="text-xs text-yellow-600 dark:text-yellow-400">Verified {providerLabel}</div>
+              )}
+              {!listing.owner_verified && (
+                <div className="text-xs text-gray-500 dark:text-gray-400">{providerLabel}</div>
               )}
             </div>
           </Link>
@@ -235,9 +240,9 @@ export default function ListingDetailPage() {
 
       {/* Contact modal */}
       {showContact && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm">
           <div className="w-full max-w-md rounded-2xl bg-white p-6 dark:bg-gray-800">
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Contact landlord</h2>
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Contact {providerLabelLower}</h2>
             <textarea value={contactMsg} onChange={(e) => setContactMsg(e.target.value)}
               placeholder="Hi, I'm interested in this property…" rows={4}
               className="mt-4 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100" />

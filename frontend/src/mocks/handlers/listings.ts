@@ -35,7 +35,7 @@ export const listingsHandlers = [
     const body = await request.json() as Partial<Listing>
     const listing: Listing = {
       id: nextId++,
-      owner_id: 'u2', owner_name: 'Mohamed Bah', owner_verified: true,
+      owner_id: 'u2', owner_name: 'Mohamed Bah', owner_role: body.owner_role ?? 'landlord', owner_verified: true,
       title: body.title ?? '', description: body.description ?? '',
       property_type: body.property_type ?? 'apartment', bedrooms: body.bedrooms ?? 0, bathrooms: body.bathrooms ?? 0,
       price_annual: body.price_annual ?? 0, currency: body.currency ?? 'SLE',

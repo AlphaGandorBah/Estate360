@@ -18,9 +18,50 @@ class IsVerifiedLandlord(IsAuthenticated):
         )
 
 
+class IsPropertyProvider(IsAuthenticated):
+    """Allow landlords and agents who advertise properties."""
+
+    def has_permission(self, request, view):
+        return (
+            super().has_permission(request, view)
+            and request.user.role in User.PROPERTY_PROVIDER_ROLES
+        )
+
+
+class IsVerifiedPropertyProvider(IsPropertyProvider):
+    def has_permission(self, request, view):
+        return super().has_permission(request, view) and request.user.is_verified
+
+
 class IsTenant(IsAuthenticated):
     def has_permission(self, request, view):
         return super().has_permission(request, view) and request.user.role == User.ROLE_TENANT
+
+
+class IsTenantOrLandlord(IsAuthenticated):
+    """Allow both tenants and landlords (not admins) to access a view."""
+    def has_permission(self, request, view):
+        return (
+            super().has_permission(request, view)
+            and request.user.role in (User.ROLE_TENANT, User.ROLE_LANDLORD)
+        )
+
+
+class IsTenantOrPropertyProvider(IsAuthenticated):
+    """Allow all public account roles while excluding administrators."""
+
+    def has_permission(self, request, view):
+        return (
+            super().has_permission(request, view)
+            and request.user.role
+            in (User.ROLE_TENANT, User.ROLE_LANDLORD, User.ROLE_AGENT)
+        )
+
+
+class IsVerifiedUser(IsAuthenticated):
+    """Require the authenticated user (any role) to be verified."""
+    def has_permission(self, request, view):
+        return super().has_permission(request, view) and request.user.is_verified
 
 
 class IsAdminRole(IsAuthenticated):

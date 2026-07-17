@@ -1,0 +1,205 @@
+[2026-06-30 00:33:39,940: WARNING/MainProcess] C:\Users\abah1\Desktop\Estate360\venv\Lib\site-packages\celery\worker\consumer\consumer.py:508: CPendingDeprecationWarning: The broker_connection_retry configuration setting will no longer determine
+whether broker connection retries are made during startup in Celery 6.0 and above.
+If you wish to retain the existing behavior for retrying connections on startup,
+you should set broker_connection_retry_on_startup to True.
+  warnings.warn(
+
+[2026-06-30 00:33:39,957: INFO/MainProcess] Connected to redis://localhost:6379/3
+[2026-06-30 00:33:39,958: WARNING/MainProcess] C:\Users\abah1\Desktop\Estate360\venv\Lib\site-packages\celery\worker\consumer\consumer.py:508: CPendingDeprecationWarning: The broker_connection_retry configuration setting will no longer determine
+whether broker connection retries are made during startup in Celery 6.0 and above.
+If you wish to retain the existing behavior for retrying connections on startup,
+you should set broker_connection_retry_on_startup to True.
+  warnings.warn(
+
+[2026-06-30 00:33:39,967: INFO/MainProcess] mingle: searching for neighbors
+[2026-06-30 00:33:41,007: INFO/MainProcess] mingle: all alone
+[2026-06-30 00:33:41,225: INFO/MainProcess] celery@ALPHA ready.
+[2026-06-30 00:44:50,343: INFO/MainProcess] Task apps.panoramas.tasks.process_panorama[e5d23954-182c-4f90-859c-9d7971bbb348] received
+[2026-06-30 00:44:50,948: WARNING/MainProcess] [2m2026-06-30T00:44:50.948521Z[0m [[32m[1minfo     [0m] [1mpanorama_validated            [0m [36mh[0m=[35m868[0m [36mpanorama_id[0m=[35m36[0m [36mprojection[0m=[35mcylindrical[0m [36mw[0m=[35m4000[0m
+[2026-06-30 00:44:51,182: WARNING/MainProcess] [2m2026-06-30T00:44:51.182242Z[0m [[32m[1minfo     [0m] [1mclamav_clean                  [0m
+[2026-06-30 00:44:51,232: WARNING/MainProcess] [2m2026-06-30T00:44:51.232680Z[0m [[32m[1minfo     [0m] [1ms3_upload                     [0m [36mbucket[0m=[35mestate360[0m [36mkey[0m=[35mpanoramas/36/original.jpg[0m
+[2026-06-30 00:44:51,367: WARNING/MainProcess] [2m2026-06-30T00:44:51.367918Z[0m [[32m[1minfo     [0m] [1ms3_upload                     [0m [36mbucket[0m=[35mestate360[0m [36mkey[0m=[35mpanoramas/36/thumbnail.jpg[0m
+[2026-06-30 00:44:51,521: WARNING/MainProcess] [2m2026-06-30T00:44:51.521816Z[0m [[32m[1minfo     [0m] [1ms3_upload                     [0m [36mbucket[0m=[35mestate360[0m [36mkey[0m=[35mpanoramas/36/preview.jpg[0m
+[2026-06-30 00:44:51,829: WARNING/MainProcess] [2m2026-06-30T00:44:51.829219Z[0m [[32m[1minfo     [0m] [1ms3_upload                     [0m [36mbucket[0m=[35mestate360[0m [36mkey[0m=[35mpanoramas/36/tiles/config.json[0m
+[2026-06-30 00:44:51,901: WARNING/MainProcess] [2m2026-06-30T00:44:51.899098Z[0m [[32m[1minfo     [0m] [1mpanorama_ready                [0m [36mpanorama_id[0m=[35m36[0m
+[2026-06-30 00:44:51,910: WARNING/MainProcess] [2m2026-06-30T00:44:51.910742Z[0m [[32m[1minfo     [0m] [1ms3_delete                     [0m [36mkey[0m=[35mpanoramas/tmp/b53a9c6e-a0e1-4ab1-873a-a8b3b47ddc32/sweep.jpg[0m
+[2026-06-30 00:44:51,943: INFO/MainProcess] Task apps.panoramas.tasks.process_panorama[e5d23954-182c-4f90-859c-9d7971bbb348] succeeded in 1.5939999999827705s: None
+[2026-06-30 00:47:01,701: INFO/MainProcess] Task apps.common.tasks._delete_panorama_storage[0ee69ec1-c904-45ff-8ae3-28da53b35ed8] received
+[2026-06-30 00:47:01,723: WARNING/MainProcess] [2m2026-06-30T00:47:01.723130Z[0m [[32m[1minfo     [0m] [1mpanorama_storage_cleaned      [0m [36mprefix[0m=[35m[0m
+[2026-06-30 00:47:01,728: INFO/MainProcess] Task apps.common.tasks._delete_panorama_storage[0ee69ec1-c904-45ff-8ae3-28da53b35ed8] succeeded in 0.0s: None
+[2026-06-30 00:47:05,461: INFO/MainProcess] Task apps.common.tasks._delete_panorama_storage[1b7c3b13-0ea8-4f26-aa37-556a5ed76d0e] received
+[2026-06-30 00:47:05,483: WARNING/MainProcess] [2m2026-06-30T00:47:05.483420Z[0m [[32m[1minfo     [0m] [1mpanorama_storage_cleaned      [0m [36mprefix[0m=[35m[0m
+[2026-06-30 00:47:05,489: INFO/MainProcess] Task apps.common.tasks._delete_panorama_storage[1b7c3b13-0ea8-4f26-aa37-556a5ed76d0e] succeeded in 0.0s: None
+[2026-06-30 00:48:42,514: INFO/MainProcess] Task apps.panoramas.tasks.process_panorama[5f242d9c-5196-4368-a44c-6a13b7372488] received
+[2026-06-30 00:48:42,575: WARNING/MainProcess] [2m2026-06-30T00:48:42.575593Z[0m [[32m[1minfo     [0m] [1mpanorama_validated            [0m [36mh[0m=[35m868[0m [36mpanorama_id[0m=[35m37[0m [36mprojection[0m=[35mcylindrical[0m [36mw[0m=[35m6942[0m
+[2026-06-30 00:48:44,317: WARNING/MainProcess] [2m2026-06-30T00:48:44.316814Z[0m [[32m[1minfo     [0m] [1mclamav_clean                  [0m
+[2026-06-30 00:48:44,419: WARNING/MainProcess] [2m2026-06-30T00:48:44.418384Z[0m [[32m[1minfo     [0m] [1ms3_upload                     [0m [36mbucket[0m=[35mestate360[0m [36mkey[0m=[35mpanoramas/37/original.jpg[0m
+[2026-06-30 00:48:44,585: WARNING/MainProcess] [2m2026-06-30T00:48:44.585420Z[0m [[32m[1minfo     [0m] [1ms3_upload                     [0m [36mbucket[0m=[35mestate360[0m [36mkey[0m=[35mpanoramas/37/thumbnail.jpg[0m
+[2026-06-30 00:48:44,834: WARNING/MainProcess] [2m2026-06-30T00:48:44.834414Z[0m [[32m[1minfo     [0m] [1ms3_upload                     [0m [36mbucket[0m=[35mestate360[0m [36mkey[0m=[35mpanoramas/37/preview.jpg[0m
+[2026-06-30 00:48:44,962: WARNING/MainProcess] [2m2026-06-30T00:48:44.962492Z[0m [[32m[1minfo     [0m] [1ms3_upload                     [0m [36mbucket[0m=[35mestate360[0m [36mkey[0m=[35mpanoramas/37/tiles/config.json[0m
+[2026-06-30 00:48:44,996: WARNING/MainProcess] [2m2026-06-30T00:48:44.996980Z[0m [[32m[1minfo     [0m] [1mpanorama_ready                [0m [36mpanorama_id[0m=[35m37[0m
+[2026-06-30 00:48:45,005: WARNING/MainProcess] [2m2026-06-30T00:48:45.005885Z[0m [[32m[1minfo     [0m] [1ms3_delete                     [0m [36mkey[0m=[35mpanoramas/tmp/fd770a84-30e2-4e04-8258-f8ec6f21fbc0/26-06-2026 02.35.41.jpg[0m
+[2026-06-30 00:48:45,010: INFO/MainProcess] Task apps.panoramas.tasks.process_panorama[5f242d9c-5196-4368-a44c-6a13b7372488] succeeded in 2.4839999999967404s: None
+[2026-06-30 00:50:22,088: INFO/MainProcess] Task apps.panoramas.tasks.process_panorama[fbe77d19-413c-42da-ac8e-3089e37b7a9f] received
+[2026-06-30 00:50:22,140: WARNING/MainProcess] [2m2026-06-30T00:50:22.140436Z[0m [[32m[1minfo     [0m] [1mpanorama_validated            [0m [36mh[0m=[35m1010[0m [36mpanorama_id[0m=[35m38[0m [36mprojection[0m=[35mcylindrical[0m [36mw[0m=[35m6377[0m
+[2026-06-30 00:50:23,006: WARNING/MainProcess] [2m2026-06-30T00:50:23.005642Z[0m [[32m[1minfo     [0m] [1mclamav_clean                  [0m
+[2026-06-30 00:50:23,160: WARNING/MainProcess] [2m2026-06-30T00:50:23.160047Z[0m [[32m[1minfo     [0m] [1ms3_upload                     [0m [36mbucket[0m=[35mestate360[0m [36mkey[0m=[35mpanoramas/38/original.jpg[0m
+[2026-06-30 00:50:23,415: WARNING/MainProcess] [2m2026-06-30T00:50:23.415527Z[0m [[32m[1minfo     [0m] [1ms3_upload                     [0m [36mbucket[0m=[35mestate360[0m [36mkey[0m=[35mpanoramas/38/thumbnail.jpg[0m
+[2026-06-30 00:50:23,735: WARNING/MainProcess] [2m2026-06-30T00:50:23.735980Z[0m [[32m[1minfo     [0m] [1ms3_upload                     [0m [36mbucket[0m=[35mestate360[0m [36mkey[0m=[35mpanoramas/38/preview.jpg[0m
+[2026-06-30 00:50:23,868: WARNING/MainProcess] [2m2026-06-30T00:50:23.868299Z[0m [[32m[1minfo     [0m] [1ms3_upload                     [0m [36mbucket[0m=[35mestate360[0m [36mkey[0m=[35mpanoramas/38/tiles/config.json[0m
+[2026-06-30 00:50:23,899: WARNING/MainProcess] [2m2026-06-30T00:50:23.899061Z[0m [[32m[1minfo     [0m] [1mpanorama_ready                [0m [36mpanorama_id[0m=[35m38[0m
+[2026-06-30 00:50:23,909: WARNING/MainProcess] [2m2026-06-30T00:50:23.909513Z[0m [[32m[1minfo     [0m] [1ms3_delete                     [0m [36mkey[0m=[35mpanoramas/tmp/d58d98d0-d401-45f3-9a06-b35c3dc2e693/26-06-2026 02.38.31.jpg[0m
+[2026-06-30 00:50:23,914: INFO/MainProcess] Task apps.panoramas.tasks.process_panorama[fbe77d19-413c-42da-ac8e-3089e37b7a9f] succeeded in 1.812999999965541s: None
+[2026-06-30 00:51:29,734: INFO/MainProcess] Task apps.listings.tasks.send_listing_decision_email[2aa7a1da-b557-41e9-9803-555830c4b666] received
+[2026-06-30 00:51:31,290: INFO/MainProcess] Task apps.listings.tasks.send_listing_decision_email[2aa7a1da-b557-41e9-9803-555830c4b666] succeeded in 1.5469999999622814s: None
+[2026-07-02 14:35:00,428: INFO/MainProcess] Task apps.accounts.tasks.send_otp_email[52a8a544-dcd8-4065-b0cd-febe6187ce98] received
+[2026-07-02 14:35:00,641: WARNING/MainProcess] [2m2026-07-02T14:35:00.637576Z[0m [[32m[1minfo     [0m] [1motp_email_sent                [0m [36memail[0m=[35mabcd@gmail.com[0m [36mpurpose[0m=[35mverify_email[0m
+[2026-07-02 14:35:00,656: INFO/MainProcess] Task apps.accounts.tasks.send_otp_email[52a8a544-dcd8-4065-b0cd-febe6187ce98] succeeded in 0.21899999992456287s: None
+[2026-07-02 14:36:39,253: INFO/MainProcess] Task apps.listings.tasks.update_search_vector[585eb4b6-c2b6-4bff-b00e-77e67689f049] received
+[2026-07-02 14:36:40,435: WARNING/MainProcess] [2m2026-07-02T14:36:40.435840Z[0m [[32m[1minfo     [0m] [1msearch_vector_updated         [0m [36mlisting_id[0m=[35m24[0m
+[2026-07-02 14:36:40,438: INFO/MainProcess] Task apps.listings.tasks.update_search_vector[585eb4b6-c2b6-4bff-b00e-77e67689f049] succeeded in 1.1880000000819564s: None
+[2026-07-02 14:37:57,221: INFO/MainProcess] Task apps.panoramas.tasks.process_panorama[2bf208c3-8a6c-4eae-9d95-7a53820463b4] received
+[2026-07-02 14:37:57,715: WARNING/MainProcess] [2m2026-07-02T14:37:57.307838Z[0m [[31m[1merror    [0m] [1mprocess_panorama_failed       [0m [36merror[0m=[35mImage width 1080px is below the 1500px minimum for a usable panorama.[0m [36mpanorama_id[0m=[35m39[0m
+[31m\u250c\u2500[0m[31m\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500[0m[31m [0m[1;31mTraceback [0m[1;2;31m(most recent call last)[0m[31m [0m[31m\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500[0m[31m\u2500\u2510[0m
+[31m\u2502[0m C:\Users\abah1\Desktop\Estate360\apps\panoramas\tasks.py:50 in process_panorama_task             [31m\u2502[0m
+[31m\u2502[0m                                                                                                  [31m\u2502[0m
+[31m\u2502[0m   [2m47 [0m[2m\u2502   \u2502   [0mbuf.seek([94m0[0m)                                                                         [31m\u2502[0m
+[31m\u2502[0m   [2m48 [0m[2m\u2502   \u2502   [0m                                                                                    [31m\u2502[0m
+[31m\u2502[0m   [2m49 [0m[2m\u2502   \u2502   [0m[94mfrom[0m[90m [0m[4;96m.[0m[4;96mpipeline[0m[90m [0m[94mimport[0m process_panorama                                              [31m\u2502[0m
+[31m\u2502[0m [31m> [0m50 [2m\u2502   \u2502   [0mprocess_panorama(panorama_id, buf, content_type, file_size)                         [31m\u2502[0m
+[31m\u2502[0m   [2m51 [0m[2m\u2502   \u2502   [0m                                                                                    [31m\u2502[0m
+[31m\u2502[0m   [2m52 [0m[2m\u2502   \u2502   [0m[2m# Clean up tmp upload[0m                                                               [31m\u2502[0m
+[31m\u2502[0m   [2m53 [0m[2m\u2502   \u2502   [0m[94mfrom[0m[90m [0m[4;96mapps[0m[4;96m.[0m[4;96mcommon[0m[4;96m.[0m[4;96mstorage[0m[90m [0m[94mimport[0m delete_file                                         [31m\u2502[0m
+[31m\u2502[0m                                                                                                  [31m\u2502[0m
+[31m\u2502[0m [34m\u250c\u2500[0m[34m\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500[0m[34m locals [0m[34m\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500[0m[34m\u2500\u2510[0m [31m\u2502[0m
+[31m\u2502[0m [34m\u2502[0m          [3;33mbuf[0m[31m =[0m [1m<[0m[1;95m_io.BytesIO[0m[39m object at [0m[1;36m0x0000027790BE9210[0m[1m>[0m                                    [34m\u2502[0m [31m\u2502[0m
+[31m\u2502[0m [34m\u2502[0m       [3;33mclient[0m[31m =[0m [1m<[0m[1;95mbotocore.client.S3[0m[39m object at [0m[1;36m0x00000277915F6270[0m[1m>[0m                             [34m\u2502[0m [31m\u2502[0m
+[31m\u2502[0m [34m\u2502[0m [3;33mcontent_type[0m[31m =[0m [32m'image/jpeg'[0m                                                                  [34m\u2502[0m [31m\u2502[0m
+[31m\u2502[0m [34m\u2502[0m          [3;33mexc[0m[31m =[0m [1;35mValueError[0m[1m([0m[32m'Image width 1080px is below the 1500px minimum for a usable [0m      [34m\u2502[0m [31m\u2502[0m
+[31m\u2502[0m [34m\u2502[0m                [32mpanorama.'[0m[1m)[0m                                                                   [34m\u2502[0m [31m\u2502[0m
+[31m\u2502[0m [34m\u2502[0m    [3;33mfile_size[0m[31m =[0m [1;36m30273[0m                                                                         [34m\u2502[0m [31m\u2502[0m
+[31m\u2502[0m [34m\u2502[0m           [3;33mio[0m[31m =[0m [1m<[0m[1;95mmodule[0m[39m [0m[32m'io'[0m[39m [0m[1;39m([0m[39mfrozen[0m[1;39m)[0m[1m>[0m                                                        [34m\u2502[0m [31m\u2502[0m
+[31m\u2502[0m [34m\u2502[0m     [3;33mpanorama[0m[31m =[0m [1m<[0m[1;95mPanorama:[0m[39m [0m[1;35mPanorama[0m[1;39m([0m[1;36m39[0m[39m, Room , pending[0m[1;39m)[0m[1m>[0m                                      [34m\u2502[0m [31m\u2502[0m
+[31m\u2502[0m [34m\u2502[0m  [3;33mpanorama_id[0m[31m =[0m [1;36m39[0m                                                                            [34m\u2502[0m [31m\u2502[0m
+[31m\u2502[0m [34m\u2502[0m         [3;33mself[0m[31m =[0m [1m<[0m[39m@task: apps.panoramas.tasks.process_panorama of estate360 at [0m[1;36m0x277eb463bc0[0m[1m>[0m  [34m\u2502[0m [31m\u2502[0m
+[31m\u2502[0m [34m\u2502[0m     [3;33msettings[0m[31m =[0m [1m<[0m[1;95mLazySettings[0m[39m [0m[32m"config.settings.dev"[0m[1m>[0m                                          [34m\u2502[0m [31m\u2502[0m
+[31m\u2502[0m [34m\u2502[0m   [3;33mtmp_s3_key[0m[31m =[0m [32m'panoramas/tmp/5fe47798-a374-4bb3-b555-6dd536307b2b/WhatsApp Image 2026-06-22[0m [34m\u2502[0m [31m\u2502[0m
+[31m\u2502[0m [34m\u2502[0m                [32mat '[0m+[1;36m13[0m                                                                       [34m\u2502[0m [31m\u2502[0m
+[31m\u2502[0m [34m\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518[0m [31m\u2502[0m
+[31m\u2502[0m                                                                                                  [31m\u2502[0m
+[31m\u2502[0m C:\Users\abah1\Desktop\Estate360\apps\panoramas\pipeline.py:138 in process_panorama              [31m\u2502[0m
+[31m\u2502[0m                                                                                                  [31m\u2502[0m
+[31m\u2502[0m   [2m135 [0m[2m\u2502   [0mpanorama.save(update_fields=[[33m"[0m[33mstatus[0m[33m"[0m])                                                [31m\u2502[0m
+[31m\u2502[0m   [2m136 [0m[2m\u2502   [0m                                                                                       [31m\u2502[0m
+[31m\u2502[0m   [2m137 [0m[2m\u2502   [0m[2m# 1. Validate[0m                                                                          [31m\u2502[0m
+[31m\u2502[0m [31m> [0m138 [2m\u2502   [0mw, h, projection = [1;4mvalidate_image(file_obj, content_type, file_size)[0m                   [31m\u2502[0m
+[31m\u2502[0m   [2m139 [0m[2m\u2502   [0mlogger.info([33m"[0m[33mpanorama_validated[0m[33m"[0m, panorama_id=panorama_id, w=w, h=h, projection=proj   [31m\u2502[0m
+[31m\u2502[0m   [2m140 [0m[2m\u2502   [0m                                                                                       [31m\u2502[0m
+[31m\u2502[0m   [2m141 [0m[2m\u2502   [0m[2m# 2. ClamAV scan[0m                                                                       [31m\u2502[0m
+[31m\u2502[0m                                                                                                  [31m\u2502[0m
+[31m\u2502[0m [34m\u250c\u2500[0m[34m\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500[0m[34m locals [0m[34m\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500[0m[34m\u2500\u2510[0m                                   [31m\u2502[0m
+[31m\u2502[0m [34m\u2502[0m [3;33mcontent_type[0m[31m =[0m [32m'image/jpeg'[0m                                [34m\u2502[0m                                   [31m\u2502[0m
+[31m\u2502[0m [34m\u2502[0m     [3;33mfile_obj[0m[31m =[0m [1m<[0m[1;95m_io.BytesIO[0m[39m object at [0m[1;36m0x0000027790BE9210[0m[1m>[0m  [34m\u2502[0m                                   [31m\u2502[0m
+[31m\u2502[0m [34m\u2502[0m    [3;33mfile_size[0m[31m =[0m [1;36m30273[0m                                       [34m\u2502[0m                                   [31m\u2502[0m
+[31m\u2502[0m [34m\u2502[0m     [3;33mpanorama[0m[31m =[0m [1m<[0m[1;95mPanorama:[0m[39m [0m[1;35mPanorama[0m[1;39m([0m[1;36m39[0m[39m, Room , processing[0m[1;39m)[0m[1m>[0m [34m\u2502[0m                                   [31m\u2502[0m
+[31m\u2502[0m [34m\u2502[0m  [3;33mpanorama_id[0m[31m =[0m [1;36m39[0m                                          [34m\u2502[0m                                   [31m\u2502[0m
+[31m\u2502[0m [34m\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518[0m                                   [31m\u2502[0m
+[31m\u2502[0m                                                                                                  [31m\u2502[0m
+[31m\u2502[0m C:\Users\abah1\Desktop\Estate360\apps\panoramas\pipeline.py:60 in validate_image                 [31m\u2502[0m
+[31m\u2502[0m                                                                                                  [31m\u2502[0m
+[31m\u2502[0m   [2m 57 [0m[2m\u2502   [0mw, h = img.size                                                                        [31m\u2502[0m
+[31m\u2502[0m   [2m 58 [0m[2m\u2502   [0m                                                                                       [31m\u2502[0m
+[31m\u2502[0m   [2m 59 [0m[2m\u2502   [0m[94mif[0m w < MIN_W:                                                                          [31m\u2502[0m
+[31m\u2502[0m [31m> [0m 60 [2m\u2502   \u2502   [0m[1;4;94mraise[0m[1;4m [0m[1;4;96mValueError[0m[1;4m([0m[1;4;33mf[0m[1;4;33m"[0m[1;4;33mImage width [0m[1;4;33m{[0m[1;4mw[0m[1;4;33m}[0m[1;4;33mpx is below the [0m[1;4;33m{[0m[1;4mMIN_W[0m[1;4;33m}[0m[1;4;33mpx minimum for a usable[0m   [31m\u2502[0m
+[31m\u2502[0m   [2m 61 [0m[2m\u2502   [0m                                                                                       [31m\u2502[0m
+[31m\u2502[0m   [2m 62 [0m[2m\u2502   [0m[94mif[0m [96mmax[0m(w, h) > MAX_LONG:                                                               [31m\u2502[0m
+[31m\u2502[0m   [2m 63 [0m[2m\u2502   \u2502   [0m[94mraise[0m [96mValueError[0m([33mf[0m[33m"[0m[33mImage is too large ([0m[33m{[0m[96mmax[0m(w,[90m [0mh)[33m}[0m[33mpx on the long edge; maximum i[0m   [31m\u2502[0m
+[31m\u2502[0m                                                                                                  [31m\u2502[0m
+[31m\u2502[0m [34m\u250c\u2500[0m[34m\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500[0m[34m locals [0m[34m\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500[0m[34m\u2500\u2510[0m [31m\u2502[0m
+[31m\u2502[0m [34m\u2502[0m [3;33mcontent_type[0m[31m =[0m [32m'image/jpeg'[0m                                                                  [34m\u2502[0m [31m\u2502[0m
+[31m\u2502[0m [34m\u2502[0m     [3;33mfile_obj[0m[31m =[0m [1m<[0m[1;95m_io.BytesIO[0m[39m object at [0m[1;36m0x0000027790BE9210[0m[1m>[0m                                    [34m\u2502[0m [31m\u2502[0m
+[31m\u2502[0m [34m\u2502[0m            [3;33mh[0m[31m =[0m [1;36m1080[0m                                                                          [34m\u2502[0m [31m\u2502[0m
+[31m\u2502[0m [34m\u2502[0m          [3;33mimg[0m[31m =[0m [1m<[0m[1;95mPIL.JpegImagePlugin.JpegImageFile[0m[39m image [0m[33mmode[0m[39m=[0m[35mRGB[0m[39m [0m[33msize[0m[39m=[0m[35m108[0m[1;36m0x1080[0m[39m at [0m          [34m\u2502[0m [31m\u2502[0m
+[31m\u2502[0m [34m\u2502[0m                [1;36m0x27790CF6750[0m[1m>[0m                                                                [34m\u2502[0m [31m\u2502[0m
+[31m\u2502[0m [34m\u2502[0m         [3;33msize[0m[31m =[0m [1;36m30273[0m                                                                         [34m\u2502[0m [31m\u2502[0m
+[31m\u2502[0m [34m\u2502[0m            [3;33mw[0m[31m =[0m [1;36m1080[0m                                                                          [34m\u2502[0m [31m\u2502[0m
+[31m\u2502[0m [34m\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518[0m [31m\u2502[0m
+[31m\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518[0m
+[1;91mValueError: [0mImage width 1080px is below the 1500px minimum for a usable panorama.
+[2026-07-02 14:37:57,793: INFO/MainProcess] Task apps.panoramas.tasks.process_panorama[2bf208c3-8a6c-4eae-9d95-7a53820463b4] retry: Retry in 180s: ValueError('Image width 1080px is below the 1500px minimum for a usable panorama.')
+[2026-07-02 14:37:57,800: INFO/MainProcess] Task apps.panoramas.tasks.process_panorama[2bf208c3-8a6c-4eae-9d95-7a53820463b4] received
+[2026-07-02 14:38:27,664: INFO/MainProcess] Task apps.common.tasks._delete_panorama_storage[1591c1d4-1b86-4b00-a47c-d3431f7d66c8] received
+[2026-07-02 14:38:27,666: WARNING/MainProcess] [2m2026-07-02T14:38:27.666758Z[0m [[32m[1minfo     [0m] [1mpanorama_storage_cleaned      [0m [36mprefix[0m=[35m[0m
+[2026-07-02 14:38:27,670: INFO/MainProcess] Task apps.common.tasks._delete_panorama_storage[1591c1d4-1b86-4b00-a47c-d3431f7d66c8] succeeded in 0.015000000013969839s: None
+[2026-07-02 14:38:46,849: INFO/MainProcess] Task apps.panoramas.tasks.process_panorama[675675da-c706-4d72-bd2b-24fd8a8b5b75] received
+[2026-07-02 14:38:46,914: WARNING/MainProcess] [2m2026-07-02T14:38:46.914113Z[0m [[32m[1minfo     [0m] [1mpanorama_validated            [0m [36mh[0m=[35m1051[0m [36mpanorama_id[0m=[35m40[0m [36mprojection[0m=[35mcylindrical[0m [36mw[0m=[35m6541[0m
+[2026-07-02 14:38:48,382: WARNING/MainProcess] [2m2026-07-02T14:38:48.382863Z[0m [[32m[1minfo     [0m] [1mclamav_clean                  [0m
+[2026-07-02 14:38:48,519: WARNING/MainProcess] [2m2026-07-02T14:38:48.519146Z[0m [[32m[1minfo     [0m] [1ms3_upload                     [0m [36mbucket[0m=[35mestate360[0m [36mkey[0m=[35mpanoramas/40/original.jpg[0m
+[2026-07-02 14:38:48,681: WARNING/MainProcess] [2m2026-07-02T14:38:48.681111Z[0m [[32m[1minfo     [0m] [1ms3_upload                     [0m [36mbucket[0m=[35mestate360[0m [36mkey[0m=[35mpanoramas/40/thumbnail.jpg[0m
+[2026-07-02 14:38:48,893: WARNING/MainProcess] [2m2026-07-02T14:38:48.893734Z[0m [[32m[1minfo     [0m] [1ms3_upload                     [0m [36mbucket[0m=[35mestate360[0m [36mkey[0m=[35mpanoramas/40/preview.jpg[0m
+[2026-07-02 14:38:49,308: WARNING/MainProcess] [2m2026-07-02T14:38:49.308003Z[0m [[32m[1minfo     [0m] [1ms3_upload                     [0m [36mbucket[0m=[35mestate360[0m [36mkey[0m=[35mpanoramas/40/tiles/config.json[0m
+[2026-07-02 14:38:49,375: WARNING/MainProcess] [2m2026-07-02T14:38:49.375095Z[0m [[32m[1minfo     [0m] [1mpanorama_ready                [0m [36mpanorama_id[0m=[35m40[0m
+[2026-07-02 14:38:49,384: WARNING/MainProcess] [2m2026-07-02T14:38:49.384426Z[0m [[32m[1minfo     [0m] [1ms3_delete                     [0m [36mkey[0m=[35mpanoramas/tmp/9d789925-c7d7-4e2c-bd1b-1cb411e619ea/26-06-2026 02.34.08.jpg[0m
+[2026-07-02 14:38:49,388: INFO/MainProcess] Task apps.panoramas.tasks.process_panorama[675675da-c706-4d72-bd2b-24fd8a8b5b75] succeeded in 2.547000000020489s: None
+[2026-07-02 14:39:46,830: INFO/MainProcess] Task apps.panoramas.tasks.process_panorama[180a08f2-8df2-446a-8ea8-21c4c465a10a] received
+[2026-07-02 14:39:46,876: WARNING/MainProcess] [2m2026-07-02T14:39:46.876704Z[0m [[32m[1minfo     [0m] [1mpanorama_validated            [0m [36mh[0m=[35m1010[0m [36mpanorama_id[0m=[35m41[0m [36mprojection[0m=[35mcylindrical[0m [36mw[0m=[35m6377[0m
+[2026-07-02 14:39:47,584: WARNING/MainProcess] [2m2026-07-02T14:39:47.584297Z[0m [[32m[1minfo     [0m] [1mclamav_clean                  [0m
+[2026-07-02 14:39:47,698: WARNING/MainProcess] [2m2026-07-02T14:39:47.698206Z[0m [[32m[1minfo     [0m] [1ms3_upload                     [0m [36mbucket[0m=[35mestate360[0m [36mkey[0m=[35mpanoramas/41/original.jpg[0m
+[2026-07-02 14:39:47,835: WARNING/MainProcess] [2m2026-07-02T14:39:47.835098Z[0m [[32m[1minfo     [0m] [1ms3_upload                     [0m [36mbucket[0m=[35mestate360[0m [36mkey[0m=[35mpanoramas/41/thumbnail.jpg[0m
+[2026-07-02 14:39:48,065: WARNING/MainProcess] [2m2026-07-02T14:39:48.065132Z[0m [[32m[1minfo     [0m] [1ms3_upload                     [0m [36mbucket[0m=[35mestate360[0m [36mkey[0m=[35mpanoramas/41/preview.jpg[0m
+[2026-07-02 14:39:48,162: WARNING/MainProcess] [2m2026-07-02T14:39:48.162447Z[0m [[32m[1minfo     [0m] [1ms3_upload                     [0m [36mbucket[0m=[35mestate360[0m [36mkey[0m=[35mpanoramas/41/tiles/config.json[0m
+[2026-07-02 14:39:48,192: WARNING/MainProcess] [2m2026-07-02T14:39:48.192657Z[0m [[32m[1minfo     [0m] [1mpanorama_ready                [0m [36mpanorama_id[0m=[35m41[0m
+[2026-07-02 14:39:48,203: WARNING/MainProcess] [2m2026-07-02T14:39:48.202563Z[0m [[32m[1minfo     [0m] [1ms3_delete                     [0m [36mkey[0m=[35mpanoramas/tmp/91459d9d-f64a-43c6-ac6c-fe6f04320da6/26-06-2026 02.38.31.jpg[0m
+[2026-07-02 14:39:48,207: INFO/MainProcess] Task apps.panoramas.tasks.process_panorama[180a08f2-8df2-446a-8ea8-21c4c465a10a] succeeded in 1.375s: None
+[2026-07-02 14:40:57,824: WARNING/MainProcess] [2m2026-07-02T14:40:57.824080Z[0m [[33m[1mwarning  [0m] [1mprocess_panorama_not_found_retrying[0m [36mpanorama_id[0m=[35m39[0m
+[2026-07-02 14:40:57,866: INFO/MainProcess] Task apps.panoramas.tasks.process_panorama[2bf208c3-8a6c-4eae-9d95-7a53820463b4] received
+[2026-07-02 14:40:57,920: INFO/MainProcess] Task apps.panoramas.tasks.process_panorama[2bf208c3-8a6c-4eae-9d95-7a53820463b4] retry: Retry in 2s
+[2026-07-02 14:40:59,827: WARNING/MainProcess] [2m2026-07-02T14:40:59.827771Z[0m [[33m[1mwarning  [0m] [1mprocess_panorama_not_found_retrying[0m [36mpanorama_id[0m=[35m39[0m
+[2026-07-02 14:40:59,863: INFO/MainProcess] Task apps.panoramas.tasks.process_panorama[2bf208c3-8a6c-4eae-9d95-7a53820463b4] received
+[2026-07-02 14:40:59,866: INFO/MainProcess] Task apps.panoramas.tasks.process_panorama[2bf208c3-8a6c-4eae-9d95-7a53820463b4] retry: Retry in 2s
+[2026-07-02 14:41:01,862: WARNING/MainProcess] [2m2026-07-02T14:41:01.862425Z[0m [[33m[1mwarning  [0m] [1mprocess_panorama_not_found_retrying[0m [36mpanorama_id[0m=[35m39[0m
+[2026-07-02 14:41:01,902: INFO/MainProcess] Task apps.panoramas.tasks.process_panorama[2bf208c3-8a6c-4eae-9d95-7a53820463b4] received
+[2026-07-02 14:41:01,905: INFO/MainProcess] Task apps.panoramas.tasks.process_panorama[2bf208c3-8a6c-4eae-9d95-7a53820463b4] retry: Retry in 2s
+[2026-07-02 14:41:03,896: WARNING/MainProcess] [2m2026-07-02T14:41:03.896508Z[0m [[33m[1mwarning  [0m] [1mprocess_panorama_not_found_retrying[0m [36mpanorama_id[0m=[35m39[0m
+[2026-07-02 14:41:03,941: INFO/MainProcess] Task apps.panoramas.tasks.process_panorama[2bf208c3-8a6c-4eae-9d95-7a53820463b4] received
+[2026-07-02 14:41:03,947: INFO/MainProcess] Task apps.panoramas.tasks.process_panorama[2bf208c3-8a6c-4eae-9d95-7a53820463b4] retry: Retry in 2s
+[2026-07-02 14:41:05,918: WARNING/MainProcess] [2m2026-07-02T14:41:05.918096Z[0m [[33m[1mwarning  [0m] [1mprocess_panorama_not_found_retrying[0m [36mpanorama_id[0m=[35m39[0m
+[2026-07-02 14:41:05,947: ERROR/MainProcess] Task apps.panoramas.tasks.process_panorama[2bf208c3-8a6c-4eae-9d95-7a53820463b4] raised unexpected: MaxRetriesExceededError("Can't retry apps.panoramas.tasks.process_panorama[2bf208c3-8a6c-4eae-9d95-7a53820463b4] args:(39, 'panoramas/tmp/5fe47798-a374-4bb3-b555-6dd536307b2b/WhatsApp Image 2026-06-22 at 21.45.32.jpeg', 'image/jpeg', 30273) kwargs:{}")
+Traceback (most recent call last):
+  File "C:\Users\abah1\Desktop\Estate360\apps\panoramas\tasks.py", line 26, in process_panorama_task
+    panorama = Panorama.objects.get(pk=panorama_id)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\abah1\Desktop\Estate360\venv\Lib\site-packages\django\db\models\manager.py", line 87, in manager_method
+    return getattr(self.get_queryset(), name)(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\abah1\Desktop\Estate360\venv\Lib\site-packages\django\db\models\query.py", line 649, in get
+    raise self.model.DoesNotExist(
+apps.panoramas.models.Panorama.DoesNotExist: Panorama matching query does not exist.
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\abah1\Desktop\Estate360\venv\Lib\site-packages\celery\app\trace.py", line 453, in trace_task
+    R = retval = fun(*args, **kwargs)
+                 ^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\abah1\Desktop\Estate360\venv\Lib\site-packages\celery\app\trace.py", line 736, in __protected_call__
+    return self.run(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\abah1\Desktop\Estate360\apps\panoramas\tasks.py", line 32, in process_panorama_task
+    raise self.retry(countdown=2)
+          ^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\abah1\Desktop\Estate360\venv\Lib\site-packages\celery\app\task.py", line 737, in retry
+    raise self.MaxRetriesExceededError(
+celery.exceptions.MaxRetriesExceededError: Can't retry apps.panoramas.tasks.process_panorama[2bf208c3-8a6c-4eae-9d95-7a53820463b4] args:(39, 'panoramas/tmp/5fe47798-a374-4bb3-b555-6dd536307b2b/WhatsApp Image 2026-06-22 at 21.45.32.jpeg', 'image/jpeg', 30273) kwargs:{}
+[2026-07-02 14:45:20,262: INFO/MainProcess] Task apps.listings.tasks.send_listing_decision_email[f6e8cc30-6d21-45fc-883c-1f1d7ec61f21] received
+[2026-07-02 14:45:20,400: INFO/MainProcess] Task apps.listings.tasks.send_listing_decision_email[f6e8cc30-6d21-45fc-883c-1f1d7ec61f21] succeeded in 0.125s: None
+[2026-07-03 20:07:35,675: INFO/MainProcess] Task apps.accounts.tasks.send_otp_email[a96960fc-df5b-4955-9af7-12b3274a8ba9] received
+[2026-07-03 20:07:35,891: WARNING/MainProcess] [2m2026-07-03T20:07:35.889293Z[0m [[32m[1minfo     [0m] [1motp_email_sent                [0m [36memail[0m=[35mabah13135@gmail.com[0m [36mpurpose[0m=[35mpassword_reset[0m
+[2026-07-03 20:07:35,903: INFO/MainProcess] Task apps.accounts.tasks.send_otp_email[a96960fc-df5b-4955-9af7-12b3274a8ba9] succeeded in 0.21899999992456287s: None
+[2026-07-03 21:18:00,527: INFO/MainProcess] Task apps.accounts.tasks.send_otp_email[e5d70344-ec5e-499f-97ab-fe737c265a0b] received
+[2026-07-03 21:18:00,679: WARNING/MainProcess] [2m2026-07-03T21:18:00.679392Z[0m [[32m[1minfo     [0m] [1motp_email_sent                [0m [36memail[0m=[35malphabah@gmail.com[0m [36mpurpose[0m=[35mverify_email[0m
+[2026-07-03 21:18:00,683: INFO/MainProcess] Task apps.accounts.tasks.send_otp_email[e5d70344-ec5e-499f-97ab-fe737c265a0b] succeeded in 0.15600000007543713s: None
+[2026-07-03 22:24:17,591: INFO/MainProcess] Task apps.accounts.tasks.send_verification_result[488abb1e-4cda-4925-89a3-736bcf4ddff1] received
+[2026-07-03 22:24:17,937: INFO/MainProcess] Task apps.accounts.tasks.send_verification_result[488abb1e-4cda-4925-89a3-736bcf4ddff1] succeeded in 0.3440000000409782s: None
+[2026-07-04 12:31:02,448: INFO/MainProcess] Task apps.accounts.tasks.send_verification_result[d9724c7f-31d5-4f72-8818-1062a248bda2] received
+[2026-07-04 12:31:02,661: INFO/MainProcess] Task apps.accounts.tasks.send_verification_result[d9724c7f-31d5-4f72-8818-1062a248bda2] succeeded in 0.2029999999795109s: None

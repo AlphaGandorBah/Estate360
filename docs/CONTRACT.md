@@ -11,19 +11,22 @@
 
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
-| POST | `/auth/register` | — | Register tenant or landlord. Returns access token + sets refresh cookie. |
+| POST | `/auth/register` | — | Register a tenant, landlord, or agent. |
 | POST | `/auth/login` | — | Email + password login. Returns access token + sets refresh cookie. |
-| POST | `/auth/token/refresh` | Cookie `refresh` + `X-Requested-With: estate360-web` | Rotate refresh token. |
+| POST | `/auth/refresh` | Refresh cookie + `X-Requested-With: estate360-web` | Issue a new access token. |
 | POST | `/auth/logout` | Bearer | Blacklist refresh token, clear cookie. |
 | POST | `/auth/verify-email` | — | Confirm email with 6-digit OTP. |
-| POST | `/auth/resend-otp` | — | Resend email verification OTP (60s cooldown). |
-| POST | `/auth/password-reset/request` | — | Send password-reset OTP to email. |
-| POST | `/auth/password-reset/confirm` | — | Confirm reset with OTP + new password. |
+| POST | `/auth/verify-email/resend` | — | Resend email verification OTP (60s cooldown). |
+| POST | `/auth/password-reset` | — | Send password-reset OTP to email. |
+| POST | `/auth/password-reset/verify-otp` | — | Verify the OTP and return a short-lived reset token. |
+| POST | `/auth/password-reset/confirm` | — | Set a new password with the reset token. |
 
 ### Register payload
 ```json
-{ "email": "user@example.com", "password": "...", "full_name": "...", "role": "tenant|landlord" }
+{ "email": "user@example.com", "password": "...", "confirm_password": "...", "full_name": "...", "phone": "+232...", "role": "tenant|landlord|agent" }
 ```
+
+`confirm_password` is recommended and validated when supplied; it remains optional for compatibility with existing API clients.
 
 ### OTP rules
 - 6 digits, 10-minute TTL
@@ -37,7 +40,18 @@
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
 | GET/PATCH | `/users/me` | Bearer | Get or update own profile. |
-| GET | `/users/{id}` | — | Public landlord profile (listings count, verified status). |
+| GET | `/users/{id}` | — | Public user profile (role, listings count, verified status). |
+
+### Role capabilities
+
+| Role | Primary capabilities |
+|------|----------------------|
+| `tenant` | Browse, save, receive recommendations, and enquire about approved listings. |
+| `landlord` | Create and manage their own verified property listings and answer tenant enquiries. |
+| `agent` | Create and manage verified listings on behalf of landlords and answer tenant enquiries as the listing contact. |
+| `admin` | Review verifications/listings, moderate users and reports, and handle support. |
+
+`Listing.owner` is the account managing a listing, so it can be either a landlord or an agent. Public listing responses include `owner_role` for accurate labels.
 
 ---
 
@@ -45,10 +59,10 @@
 
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
-| POST | `/verification/submit` | Bearer (landlord) | Upload ID doc(s) for identity verification. |
-| GET | `/verification/me` | Bearer (landlord) | View own verification status. |
-| GET | `/admin/verification` | Bearer (admin) | List pending verifications. |
-| POST | `/admin/verification/{id}/decision` | Bearer (admin) | Approve or reject. Body: `{"decision":"approved"|"rejected","notes":"..."}` |
+| POST | `/verification/` | Bearer (non-admin) | Upload ID document(s) for identity verification. |
+| GET | `/verification/me` | Bearer (non-admin) | View own verification status. |
+| GET | `/admin/verifications/` | Bearer (admin) | List pending verifications. |
+| POST | `/admin/verifications/{id}/decision` | Bearer (admin) | Approve or reject. Body: `{"decision":"approved"|"rejected","notes":"..."}` |
 
 ---
 
@@ -57,8 +71,8 @@
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
 | GET | `/listings` | Optional | Browse approved listings. Supports filtering & sort. |
-| POST | `/listings` | Bearer (verified landlord) | Create listing (starts as `draft`). |
-| GET | `/listings/{id}` | Optional | Get listing detail. Logs view interaction (deduped 24h per user). |
+| POST | `/listings` | Bearer (verified landlord or agent) | Create a listing (starts as `draft`). Agents use this to manage properties on behalf of landlords. |
+| GET | `/listings/{id}` | Optional | Get approved listing detail. Unpublished listings are visible only to their owner and admins. Tenant views are logged (deduped 24h per user). |
 | PATCH | `/listings/{id}` | Bearer (owner) | Update listing. |
 | DELETE | `/listings/{id}` | Bearer (owner or admin) | Soft-archive listing. |
 | POST | `/listings/{id}/submit` | Bearer (owner) | Submit for review (`draft` → `pending`). Requires ≥1 ready panorama. |
@@ -69,6 +83,7 @@
 | Param | Type | Description |
 |-------|------|-------------|
 | `q` | string | Full-text search (PostgreSQL FTS / SQLite icontains fallback) |
+| `owner_id` | UUID | Approved listings managed by one landlord or agent |
 | `area` | enum (multi) | `aberdeen`, `lumley`, `goderich`, `hill_station`, `wilberforce`, `murray_town`, `brookfields`, `kissy`, `wellington`, `calaba_town`, `other` |
 | `min_price` / `max_price` | integer | Annual price in SLE or USD |
 | `min_bedrooms` / `max_bedrooms` | integer | Bedroom count |
@@ -113,7 +128,7 @@ All prices are **annual** (`price_annual` integer field). Display conversion is 
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
 | GET | `/conversations` | Bearer | List user's conversations. |
-| POST | `/conversations` | Bearer (tenant) | Start conversation with landlord about a listing. |
+| POST | `/conversations` | Bearer (tenant) | Start a conversation with the listing's landlord or agent. Send `provider_id` (preferred) or the legacy `landlord_id`; when a `listing_id` is supplied, its owner is the recipient. |
 | GET | `/conversations/{id}/messages` | Bearer (participant) | Cursor-paginated message history (newest first). |
 | POST | `/conversations/{id}/messages` | Bearer (participant) | Send message (REST fallback; prefer WebSocket). |
 

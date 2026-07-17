@@ -1,0 +1,80 @@
+{
+	admin off
+	# TLS clients normally omit SNI for literal IP addresses. Select the LAN
+	# certificate in that case so phone and desktop browsers can connect by IP.
+	default_sni {$HTTPS_HOST:estate360.local}
+}
+
+# The local CA's public certificate is deliberately available over plain HTTP
+# so a phone or development machine can trust it before its first HTTPS visit.
+# Every other request is upgraded to HTTPS.
+http://localhost, http://127.0.0.1, http://{$HTTPS_HOST:estate360.local} {
+	@local_ca path /caddy-local-ca.crt
+	handle @local_ca {
+		root * /data/caddy/pki/authorities/local
+		rewrite * /root.crt
+		header Content-Type application/x-x509-ca-cert
+		header Content-Disposition "attachment; filename=estate360-local-ca.crt"
+		file_server
+	}
+
+	handle {
+		redir https://{host}{uri} 308
+	}
+}
+
+# Estate360 SPA and application API. Caddy automatically supports WebSocket
+# upgrades through reverse_proxy, so the original /ws/* path is preserved.
+https://localhost, https://127.0.0.1, https://{$HTTPS_HOST:estate360.local} {
+	tls internal
+	encode zstd gzip
+
+	@api path /api /api/*
+	handle @api {
+		reverse_proxy web:8000
+	}
+
+	@websockets path /ws /ws/*
+	handle @websockets {
+		reverse_proxy web:8000
+	}
+
+	handle {
+		root * /srv
+		try_files {path} /index.html
+		file_server
+	}
+
+	header {
+		X-Content-Type-Options nosniff
+		Referrer-Policy strict-origin-when-cross-origin
+		-Server
+	}
+}
+
+# MinIO remains private to Compose. This dedicated HTTPS listener preserves
+# the complete bucket path and signed query string while supplying the CORS
+# headers required by images, range requests, and the panorama viewer.
+https://localhost:9443, https://127.0.0.1:9443, https://{$HTTPS_HOST:estate360.local}:9443 {
+	tls internal
+
+	@preflight method OPTIONS
+	handle @preflight {
+		header Access-Control-Allow-Origin "*"
+		header Access-Control-Allow-Methods "GET, HEAD, OPTIONS"
+		header Access-Control-Allow-Headers "*"
+		header Access-Control-Max-Age "86400"
+		respond "" 204
+	}
+
+	handle {
+		header Access-Control-Allow-Origin "*"
+		header Access-Control-Allow-Methods "GET, HEAD, OPTIONS"
+		header Access-Control-Allow-Headers "*"
+		header Access-Control-Expose-Headers "Accept-Ranges, Content-Length, Content-Range, Content-Type, ETag"
+		header Cross-Origin-Resource-Policy "cross-origin"
+		reverse_proxy minio:9000
+	}
+
+	header -Server
+}

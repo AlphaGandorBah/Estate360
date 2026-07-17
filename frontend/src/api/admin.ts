@@ -49,4 +49,10 @@ export const adminApi = {
   },
   resolveReport: (id: number, d: { decision: string; action?: string; notes?: string }) =>
     api.post<FraudReport>(`/admin/reports/${id}/resolve`, d),
+  deletionRequests: (opts: { status?: string; page?: number } = {}) => {
+    const { status = 'pending', page = 1 } = opts
+    return api.get(`/admin/deletion-requests/?status=${status}&page=${page}`)
+  },
+  resolveDeletionRequest: (id: number, d: { decision: 'approved' | 'rejected'; notes?: string }) =>
+    api.post(`/admin/deletion-requests/${id}/resolve`, d),
 }

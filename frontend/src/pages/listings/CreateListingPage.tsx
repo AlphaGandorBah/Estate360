@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom'
-import { useForm } from 'react-hook-form'
+import { useForm, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { listingsApi } from '@/api'
 import { AREA_LABELS, PROPERTY_LABELS } from '@/lib/utils'
@@ -13,14 +13,14 @@ const TYPES = Object.entries(PROPERTY_LABELS) as [PropertyType, string][]
 export default function CreateListingPage() {
   const navigate = useNavigate()
   const {
-    register, handleSubmit, setError, watch, setValue,
+    register, handleSubmit, setError, setValue, control,
     formState: { errors, isSubmitting },
   } = useForm<ListingForm>({
     resolver: zodResolver(listingSchema),
     defaultValues: { property_type: 'apartment', location_area: 'aberdeen', bedrooms: 1, bathrooms: 1, currency: 'SLE', lat: null, lng: null },
   })
-  const lat = watch('lat')
-  const lng = watch('lng')
+  const lat = useWatch({ control, name: 'lat' })
+  const lng = useWatch({ control, name: 'lng' })
 
   const onSubmit = async (form: ListingForm) => {
     try {

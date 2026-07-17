@@ -13,9 +13,12 @@ examples:
   - "my listing won't submit"
   - "how do I publish my listing"
   - "how do I become a landlord on estate360"
+  - "how do I list a property as an agent"
+  - "how can an agent find tenants"
+  - "I manage properties for landlords"
   - "what do I need to post a property"
 responses:
-  - "From your dashboard, click '+ Add Listing' to create a draft, fill in the details, and add at least one 360° photo (capture with your camera or upload an existing equirectangular photo). You'll need to be a verified landlord before you can submit it for admin approval — the Submit button explains what's missing if it's disabled."
+  - "Landlords and agents can click '+ Add Listing' from their dashboard, create a draft, fill in the details, and add at least one 360° photo (capture with your camera or upload an existing equirectangular photo). You must be identity-verified before submitting it for admin approval — the Submit button explains what's missing if it is disabled."
 followups:
   - "How does verification work?"
   - "How do I add a 360 photo?"

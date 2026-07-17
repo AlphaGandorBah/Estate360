@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { panoramasApi } from '@/api'
 import { getErrorMessage } from '@/lib/utils'
 import { isSaveDataEnabled } from '@/lib/pwa'
+import { validatePanoramaImage } from '@/lib/panoramaImage'
 import { useWebSocket } from '@/lib/ws'
 import PanoramaCapture from '@/components/listings/PanoramaCapture'
 import type { Panorama, PanoramaStatus } from '@/types'
@@ -22,8 +23,9 @@ const MAX_POLL_MS = 5 * 60 * 1000
 export default function PanoramaManager({ listingId }: Props) {
   const qc = useQueryClient()
   const pollCountRef = useRef(0)
-  const pollStartRef = useRef(Date.now())
+  const pollStartRef = useRef<number | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const previewUrlRef = useRef<string | null>(null)
 
   const [mode, setMode] = useState<'capture' | 'upload'>('capture')
   const [file, setFile] = useState<File | null>(null)
@@ -32,12 +34,24 @@ export default function PanoramaManager({ listingId }: Props) {
   const [ordering, setOrdering] = useState<string>('')
   const [uploadError, setUploadError] = useState('')
 
+  const selectFile = useCallback((nextFile: File | null) => {
+    if (previewUrlRef.current) URL.revokeObjectURL(previewUrlRef.current)
+    const nextPreviewUrl = nextFile ? URL.createObjectURL(nextFile) : null
+    previewUrlRef.current = nextPreviewUrl
+    setFile(nextFile)
+    setPreviewUrl(nextPreviewUrl)
+  }, [])
+
   useEffect(() => {
-    if (!file) { setPreviewUrl(null); return }
-    const url = URL.createObjectURL(file)
-    setPreviewUrl(url)
-    return () => URL.revokeObjectURL(url)
-  }, [file])
+    pollCountRef.current = 0
+    pollStartRef.current = Date.now()
+  }, [listingId])
+
+  useEffect(() => {
+    return () => {
+      if (previewUrlRef.current) URL.revokeObjectURL(previewUrlRef.current)
+    }
+  }, [])
 
   const { data: panoramaRes } = useQuery({
     queryKey: ['panoramas', listingId],
@@ -46,7 +60,7 @@ export default function PanoramaManager({ listingId }: Props) {
       const data = query.state.data
       const pending = data?.results.some((p) => p.status === 'pending' || p.status === 'processing')
       if (!pending) return false
-      if (Date.now() - pollStartRef.current > MAX_POLL_MS) return false
+      if (pollStartRef.current !== null && Date.now() - pollStartRef.current > MAX_POLL_MS) return false
       const delay = BACKOFF_MS[Math.min(pollCountRef.current, BACKOFF_MS.length - 1)]
       pollCountRef.current += 1
       // Save-Data: double polling intervals to cut data usage on metered connections.
@@ -79,7 +93,7 @@ export default function PanoramaManager({ listingId }: Props) {
       qc.invalidateQueries({ queryKey: ['panoramas', listingId] })
       pollCountRef.current = 0
       pollStartRef.current = Date.now()
-      setFile(null)
+      selectFile(null)
       setRoomLabel('')
       setOrdering('')
       setUploadError('')
@@ -104,6 +118,23 @@ export default function PanoramaManager({ listingId }: Props) {
     }
     if (!roomLabel.trim()) { setUploadError('Room label is required.'); return }
     uploadMut.mutate()
+  }
+
+  const handleUploadSelection = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const input = event.currentTarget
+    const selected = input.files?.[0] ?? null
+    setUploadError('')
+    if (!selected) { selectFile(null); return }
+
+    const validationError = await validatePanoramaImage(selected)
+    if (validationError) {
+      selectFile(null)
+      setUploadError(validationError)
+      input.value = ''
+      return
+    }
+
+    selectFile(selected)
   }
 
   const retry = (p: Panorama) => {
@@ -186,23 +217,23 @@ export default function PanoramaManager({ listingId }: Props) {
           <input value={roomLabel} onChange={(e) => setRoomLabel(e.target.value)}
             placeholder="e.g. Living room" className="input" />
         </div>
-        <div className="grid grid-cols-2 gap-4">
-          <div>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div className="min-w-0">
             <label className="label">360° photo (JPEG or PNG)</label>
             {mode === 'upload' ? (
               <input ref={fileInputRef} type="file" accept="image/jpeg,image/png"
-                onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+                onChange={handleUploadSelection}
                 className="block w-full text-sm text-gray-500 file:mr-4 file:rounded-lg file:border-0 file:bg-emerald-50 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-emerald-700 hover:file:bg-emerald-100 dark:text-gray-400 dark:file:bg-emerald-900/30 dark:file:text-emerald-400 dark:hover:file:bg-emerald-900/50" />
             ) : file && previewUrl ? (
               <div className="flex items-center gap-3">
                 <img src={previewUrl} alt="Captured panorama" className="h-16 w-28 rounded-lg object-cover" />
-                <button type="button" onClick={() => setFile(null)}
+                <button type="button" onClick={() => selectFile(null)}
                   className="text-sm font-medium text-emerald-600 hover:underline dark:text-emerald-400">
                   Retake
                 </button>
               </div>
             ) : (
-              <PanoramaCapture onCapture={(f) => setFile(f)} onCancel={() => setMode('upload')} />
+              <PanoramaCapture onCapture={selectFile} onCancel={() => setMode('upload')} />
             )}
           </div>
           <div>

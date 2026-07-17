@@ -4,6 +4,7 @@ from apps.accounts.views.auth_views import (
     LogoutView,
     PasswordResetConfirmView,
     PasswordResetRequestView,
+    PasswordResetVerifyOTPView,
     RefreshView,
     RegisterView,
     ResendOTPView,
@@ -18,5 +19,6 @@ urlpatterns = [
     path("verify-email", VerifyEmailView.as_view(), name="auth-verify-email"),
     path("verify-email/resend", ResendOTPView.as_view(), name="auth-verify-email-resend"),
     path("password-reset", PasswordResetRequestView.as_view(), name="auth-password-reset"),
+    path("password-reset/verify-otp", PasswordResetVerifyOTPView.as_view(), name="auth-password-reset-verify-otp"),
     path("password-reset/confirm", PasswordResetConfirmView.as_view(), name="auth-password-reset-confirm"),
 ]

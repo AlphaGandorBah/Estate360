@@ -19,7 +19,7 @@ PROP_TYPES = list(PropertyType.values)
 
 
 class Command(BaseCommand):
-    help = "Populate demo data: users, landlords, tenants, listings."
+    help = "Populate demo data: users, landlords, agents, tenants, and listings."
 
     def handle(self, *args, **options):
         self.stdout.write("Seeding database …")
@@ -48,6 +48,25 @@ class Command(BaseCommand):
                 u.save()
             landlords.append(u)
 
+        # Rental agents manage listings on behalf of landlords and receive
+        # tenant enquiries as the listing contact.
+        agents = []
+        for i in range(2):
+            u, created = User.objects.get_or_create(
+                email=f"agent{i+1}@example.com",
+                defaults={
+                    "full_name": f"Rental Agent {i+1}",
+                    "role": "agent",
+                    "is_verified": True,
+                },
+            )
+            if created:
+                u.set_password("Password@123")
+                u.save()
+            agents.append(u)
+
+        property_providers = landlords + agents
+
         # Tenants
         tenants = []
         for i in range(5):
@@ -75,10 +94,10 @@ class Command(BaseCommand):
         ]
 
         for i, title in enumerate(titles):
-            landlord = landlords[i % len(landlords)]
+            provider = property_providers[i % len(property_providers)]
             Listing.objects.get_or_create(
                 title=title,
-                owner=landlord,
+                owner=provider,
                 defaults={
                     "description": f"Beautiful property in Freetown. {title}. Available immediately.",
                     "property_type": random.choice(PROP_TYPES),

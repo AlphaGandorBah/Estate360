@@ -25,8 +25,11 @@ def process_panorama_task(self, panorama_id: int, tmp_s3_key: str, content_type:
     try:
         panorama = Panorama.objects.get(pk=panorama_id)
     except Panorama.DoesNotExist:
-        logger.warning("process_panorama_not_found", panorama_id=panorama_id)
-        return
+        # The row may not be visible to this connection yet if we somehow raced
+        # the creating transaction's commit — retry a few times before giving up,
+        # rather than silently leaving the panorama stuck at "pending" forever.
+        logger.warning("process_panorama_not_found_retrying", panorama_id=panorama_id)
+        raise self.retry(countdown=2)
 
     # Idempotency guard: if already done, skip
     if panorama.status == Panorama.STATUS_READY:

@@ -1,4 +1,4 @@
-import { useRef } from 'react'
+import { useCallback, useState } from 'react'
 import { v4 as uuid } from 'uuid'
 
 /**
@@ -13,11 +13,9 @@ import { v4 as uuid } from 'uuid'
  * is reached over plain HTTP via a LAN IP (e.g. testing from a phone).
  */
 export function useIdempotencyKey() {
-  const keyRef = useRef(uuid())
+  const [key, setKey] = useState(() => uuid())
 
-  const reset = () => {
-    keyRef.current = uuid()
-  }
+  const reset = useCallback(() => setKey(uuid()), [])
 
-  return { key: keyRef.current, reset }
+  return { key, reset }
 }

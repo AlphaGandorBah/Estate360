@@ -9,11 +9,12 @@ except ImportError:
     SearchQuery = None  # type: ignore[assignment,misc]
     SearchRank = None   # type: ignore[assignment,misc]
 
-from .models import Currency, Listing, ListingStatus, LocationArea, PropertyType
+from .models import Currency, Listing, LocationArea, PropertyType
 
 
 class ListingFilter(django_filters.FilterSet):
     q = django_filters.CharFilter(method="filter_full_text", label="Full-text search")
+    owner_id = django_filters.UUIDFilter(field_name="owner_id")
     area = django_filters.MultipleChoiceFilter(
         field_name="location_area",
         choices=LocationArea.choices,

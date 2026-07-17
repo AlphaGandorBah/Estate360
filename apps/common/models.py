@@ -71,6 +71,8 @@ class AdminActionLog(models.Model):
     ACTION_DELETE_USER = "delete_user"
     ACTION_DELETE_LISTING = "delete_listing"
     ACTION_WARN_USER = "warn_user"
+    ACTION_APPROVE_DELETION = "approve_deletion"
+    ACTION_REJECT_DELETION = "reject_deletion"
     ACTION_CHOICES = [
         (ACTION_BAN_USER, "Banned user"),
         (ACTION_UNBAN_USER, "Unbanned user"),
@@ -80,6 +82,8 @@ class AdminActionLog(models.Model):
         (ACTION_DELETE_USER, "Deleted user"),
         (ACTION_DELETE_LISTING, "Deleted listing"),
         (ACTION_WARN_USER, "Warned user"),
+        (ACTION_APPROVE_DELETION, "Approved account deletion"),
+        (ACTION_REJECT_DELETION, "Rejected account deletion"),
     ]
 
     admin = models.ForeignKey(

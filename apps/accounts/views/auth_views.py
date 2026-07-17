@@ -1,6 +1,7 @@
 """Auth views: register, login, refresh, logout, verify-email, password reset."""
 import structlog
 from django.conf import settings
+from django.core import signing
 from django.utils import timezone
 from rest_framework import status
 from rest_framework.permissions import AllowAny, IsAuthenticated
@@ -9,6 +10,9 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.exceptions import TokenError
 from rest_framework_simplejwt.tokens import RefreshToken
+
+_RESET_SALT = "estate360-password-reset-verified"
+_RESET_TOKEN_TTL = 900  # 15 minutes
 
 from apps.accounts.models import EmailOTP, User
 from apps.accounts.otp import (
@@ -20,6 +24,7 @@ from apps.accounts.serializers import (
     LoginSerializer,
     PasswordResetConfirmSerializer,
     PasswordResetRequestSerializer,
+    PasswordResetVerifyOTPSerializer,
     RegisterSerializer,
     ResendOTPSerializer,
     VerifyEmailSerializer,
@@ -32,6 +37,7 @@ logger = structlog.get_logger(__name__)
 
 REFRESH_COOKIE = settings.JWT_REFRESH_COOKIE_NAME
 COOKIE_MAX_AGE = settings.JWT_REFRESH_COOKIE_MAX_AGE
+COOKIE_SECURE = settings.JWT_REFRESH_COOKIE_SECURE
 
 
 def _set_refresh_cookie(response: Response, refresh_token: str) -> None:
@@ -40,14 +46,18 @@ def _set_refresh_cookie(response: Response, refresh_token: str) -> None:
         value=refresh_token,
         max_age=COOKIE_MAX_AGE,
         httponly=True,
-        secure=not settings.DEBUG,
+        secure=COOKIE_SECURE,
         samesite="Lax",
         path="/api/v1/auth/",
     )
 
 
 def _clear_refresh_cookie(response: Response) -> None:
-    response.delete_cookie(key=REFRESH_COOKIE, path="/api/v1/auth/")
+    response.delete_cookie(
+        key=REFRESH_COOKIE,
+        path="/api/v1/auth/",
+        samesite="Lax",
+    )
 
 
 class RegisterView(IdempotencyMixin, APIView):
@@ -248,7 +258,6 @@ class VerifyEmailView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        User.objects.filter(email=email).update(is_verified=True)
         return Response({"detail": "Email verified successfully."})
 
 
@@ -303,7 +312,38 @@ class PasswordResetRequestView(IdempotencyMixin, APIView):
         return response
 
 
+class PasswordResetVerifyOTPView(APIView):
+    """Step 1: Validate the 6-digit OTP, return a short-lived signed reset_token."""
+    permission_classes = [AllowAny]
+    throttle_classes = [AuthThrottle]
+    throttle_scope = "auth"
+
+    def post(self, request: Request) -> Response:
+        serializer = PasswordResetVerifyOTPSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        email = serializer.validated_data["email"]
+        code = serializer.validated_data["code"]
+
+        valid, reason = validate_otp(email, code, EmailOTP.PURPOSE_RESET)
+        if not valid:
+            messages = {
+                "no_otp": "No reset code found for this email.",
+                "expired": "Reset code has expired.",
+                "max_attempts": "Maximum attempts reached. Request a new code.",
+                "invalid_code": "Invalid reset code.",
+            }
+            return Response(
+                {"code": reason, "detail": messages.get(reason, "Invalid code.")},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        reset_token = signing.dumps({"email": email}, salt=_RESET_SALT)
+        return Response({"reset_token": reset_token, "detail": "OTP verified. Use reset_token to set your new password."})
+
+
 class PasswordResetConfirmView(IdempotencyMixin, APIView):
+    """Step 2: Set a new password using the reset_token from step 1."""
     permission_classes = [AllowAny]
     throttle_classes = [AuthThrottle]
     throttle_scope = "auth"
@@ -317,19 +357,25 @@ class PasswordResetConfirmView(IdempotencyMixin, APIView):
         serializer.is_valid(raise_exception=True)
 
         email = serializer.validated_data["email"]
-        code = serializer.validated_data["code"]
+        reset_token = serializer.validated_data["reset_token"]
         new_password = serializer.validated_data["new_password"]
 
-        valid, reason = validate_otp(email, code, EmailOTP.PURPOSE_RESET)
-        if not valid:
-            messages = {
-                "no_otp": "No reset code found for this email.",
-                "expired": "Reset code has expired.",
-                "max_attempts": "Maximum attempts reached.",
-                "invalid_code": "Invalid reset code.",
-            }
+        try:
+            data = signing.loads(reset_token, salt=_RESET_SALT, max_age=_RESET_TOKEN_TTL)
+        except signing.SignatureExpired:
             return Response(
-                {"code": reason, "detail": messages.get(reason, "Invalid code.")},
+                {"code": "token_expired", "detail": "Reset token has expired. Please request a new code."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except signing.BadSignature:
+            return Response(
+                {"code": "invalid_token", "detail": "Invalid reset token."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if data.get("email") != email:
+            return Response(
+                {"code": "invalid_token", "detail": "Token does not match the provided email."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 

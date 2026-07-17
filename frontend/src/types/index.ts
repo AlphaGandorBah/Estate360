@@ -1,6 +1,10 @@
 // ─── Enums ────────────────────────────────────────────────────────────────────
 
-export type Role = 'tenant' | 'landlord' | 'admin'
+export type Role = 'tenant' | 'landlord' | 'agent' | 'admin'
+
+export type RegistrableRole = Exclude<Role, 'admin'>
+
+export type ProviderRole = Extract<Role, 'landlord' | 'agent'>
 
 export type PropertyType = 'apartment' | 'house' | 'studio' | 'room' | 'commercial'
 
@@ -48,7 +52,8 @@ export interface User {
 
 export type AdminActionType =
   | 'ban_user' | 'unban_user' | 'restrict_user' | 'unrestrict_user'
-  | 'reset_password' | 'delete_user' | 'delete_listing'
+  | 'reset_password' | 'delete_user' | 'delete_listing' | 'warn_user'
+  | 'approve_deletion' | 'reject_deletion'
 
 export interface AdminActionLog {
   id: number
@@ -64,6 +69,7 @@ export interface PublicUser {
   id: string
   full_name: string
   avatar_url: string | null
+  role: Role
   is_verified: boolean
   listings_count: number
   joined_year: number
@@ -88,6 +94,7 @@ export interface Listing {
   id: number
   owner_id: string
   owner_name: string
+  owner_role: ProviderRole
   owner_verified: boolean
   title: string
   description: string
@@ -164,6 +171,7 @@ export interface SavedListing {
 export interface Verification {
   id: number
   user_name: string
+  user_role?: Role
   document_type: DocumentType
   document_front_url: string
   document_back_url: string | null
@@ -181,8 +189,12 @@ export interface Conversation {
   initiator_id: string
   initiator_name: string
   initiator_role: Role
-  landlord_id: string | null
-  landlord_name: string | null
+  provider_id: string | null
+  provider_name: string | null
+  provider_role: ProviderRole | null
+  /** Temporary compatibility with conversations created before provider-neutral fields. */
+  landlord_id?: string | null
+  landlord_name?: string | null
   is_support: boolean
   listing_id: number | null
   last_message_at: string | null

@@ -28,6 +28,25 @@ class TestConversations:
         assert r2.status_code in (200, 201)
         assert r1.data["id"] == r2.data["id"]
 
+    def test_start_listingless_provider_conversation_reuses_thread(
+        self, tenant_client, tenant_user, verified_landlord
+    ):
+        from apps.messaging.models import Conversation
+
+        payload = {"provider_id": str(verified_landlord.id)}
+        first = tenant_client.post("/api/v1/conversations/", payload, format="json")
+        second = tenant_client.post("/api/v1/conversations/", payload, format="json")
+
+        assert first.status_code == 201
+        assert second.status_code == 200
+        assert second.data["id"] == first.data["id"]
+        assert Conversation.objects.filter(
+            initiator=tenant_user,
+            landlord=verified_landlord,
+            listing__isnull=True,
+            is_support=False,
+        ).count() == 1
+
     def test_landlord_cannot_start(self, landlord_client, tenant_user):
         resp = landlord_client.post(
             "/api/v1/conversations/",
@@ -223,6 +242,7 @@ async def test_passive_websocket_listener_receives_message_without_refresh():
     from channels.testing import WebsocketCommunicator
     from django.test import Client
     from rest_framework_simplejwt.tokens import RefreshToken
+
     from apps.accounts.models import User
     from apps.messaging.models import Conversation
     from apps.messaging.routing import websocket_urlpatterns

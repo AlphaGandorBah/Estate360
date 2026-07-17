@@ -98,7 +98,7 @@ export default function AdminListingsPage() {
                 {l.title}
               </Link>
               <div className="text-sm text-gray-500 dark:text-gray-400">
-                {l.owner_name} · {formatPrice(l.price_annual, l.currency)}/yr · {l.location_area.replace('_', ' ')}
+                {l.owner_name} · <span className="capitalize">{l.owner_role}</span> · {formatPrice(l.price_annual, l.currency)}/yr · {l.location_area.replace('_', ' ')}
               </div>
               {l.rejection_notes && (
                 <div className="mt-1 text-xs text-red-600 dark:text-red-400">Note: {l.rejection_notes}</div>
@@ -159,11 +159,11 @@ export default function AdminListingsPage() {
       )}
 
       {rejectId !== null && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm">
           <div className="w-full max-w-md rounded-2xl bg-white p-6 dark:bg-gray-800">
             <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Reject listing</h2>
             <textarea value={rejectNote} onChange={(e) => setRejectNote(e.target.value)}
-              placeholder="Reason for rejection (shown to landlord)…" rows={4}
+              placeholder="Reason for rejection (shown to the listing provider)…" rows={4}
               className="mt-4 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100" />
             <div className="mt-4 flex gap-3">
               <button onClick={() => setRejectId(null)}
